@@ -1,6 +1,6 @@
 # ADR-003: shared evidence-backed semantic memory and graph
 
-Status: governance boundary accepted; PostgreSQL proposed. Date: 2026-11-07.
+Status: governance boundary accepted. PostgreSQL selection implemented for the Phase 1 persistence pilot by [ADR-008](008-postgresql-persistence.md); outbox/API work remains open. Original date: 2026-11-07.
 
 Decision: all workers read a shared, versioned knowledge layer and submit proposed findings with provenance. Canonical writes pass through reconciliation. Store semantic, episodic, procedural, working and evidence records, plus typed relationships. Scope knowledge by service, environment, source revision and observation time. Maintain transactional events for change invalidation.
 

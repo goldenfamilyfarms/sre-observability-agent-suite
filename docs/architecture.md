@@ -27,7 +27,7 @@ Start as a modular application with separate worker processes, not a fleet of mi
 
 ## Shared knowledge
 
-The target store is PostgreSQL for canonical facts, versioned relationships, execution events, and a transactional outbox. Evaluate pgvector only against measured retrieval needs. A separate graph database requires an ADR supported by real query/scale evidence.
+PostgreSQL persistence for canonical facts, versioned relationships, preview generations and execution audit records is implemented in the [Phase 1 persistence pilot](postgresql.md). A transactional delivery outbox remains a target capability. Evaluate pgvector only against measured retrieval needs. A separate graph database requires an ADR supported by real query/scale evidence.
 
 Memory classes: semantic facts, episodic executions, procedural patterns, scoped working context, and authoritative evidence references. Graph relationships include `CALLS`, `PUBLISHES_TO`, `CONSUMES_FROM`, `DEPLOYED_IN`, `USES`, `IMPLEMENTS`, `CONTAINS`, and `VALIDATES`. Each edge has a service/environment/revision scope, provenance, and observation/expiry times. The local adapter represents facts and edges uniformly as subject/predicate/value records; production ontology validation is future work.
 
@@ -54,7 +54,7 @@ Target certification path: Not Assessed → Assessed → Instrumentation In Prog
 - Repository text, Jira descriptions, retrieved facts, model output, and telemetry are untrusted data. They cannot expand tool permissions or grant approval.
 - Workers operate in isolated workspaces with explicit tool/network allowlists, resource limits and short-lived credentials. Never pass production credentials to an engineering worker. Repository hooks/configuration must be reviewed before a non-interactive Claude Code session.
 - Only a trusted dispatcher assigns actor identities and roles. Review, QA, and verification are independent of the implementation worker. Strings supplied by the model are not authenticated identity.
-- Only the knowledge steward may reconcile canonical state. Agents propose findings. The current SQLite adapter assumes a trusted local process; it is not a secure multi-tenant API.
+- Only the knowledge steward may reconcile canonical state. Agents propose findings. The SQLite and PostgreSQL adapters assume trusted callers; neither supplies a secure multi-tenant API.
 - Evidence URIs and digests are references. The local EvidenceStore verifies persisted bytes and metadata; a future authenticated evidence service must fetch authorized sources, bind query results to artifacts/windows, and redact content. Local integrity checks prove neither producer identity nor the truth of a remote artifact.
 - Non-production promotion defaults to denied until the exact release is explicitly authorized. Production additionally requires an authenticated human approval bound to service, environment, full commit SHA, artifact digest, release-plan digest, gate set, authority and validity window. Revocation or any release change invalidates it.
 - Enforce policy again immediately before the external write. Record intent and result with an idempotency key; recover by reconciling remote state after uncertain outcomes. Never claim exactly-once delivery from at-least-once activity execution.

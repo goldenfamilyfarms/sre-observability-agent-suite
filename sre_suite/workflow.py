@@ -6,6 +6,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from .contracts import Evidence, JiraExecutionTicket, Scope, nonempty
+from .database import Database, SQLiteDatabase
 from .serialization import decode_scope, encode_scope
 from .storage import prepare_schema
 
@@ -80,11 +81,11 @@ class Checkpoints:
     """Single-machine CAS and idempotency exercise; not a durable orchestrator."""
 
     def __init__(self, path: str, scope: Scope) -> None:
-        self._db = sqlite3.connect(path)
+        connection = sqlite3.connect(path)
         self._scope = scope
         try:
             prepare_schema(
-                self._db,
+                connection,
                 "checkpoints",
                 (
                     "CREATE TABLE IF NOT EXISTS checkpoints (run_id TEXT PRIMARY KEY, "
@@ -95,8 +96,9 @@ class Checkpoints:
                 ),
             )
         except Exception:
-            self._db.close()
+            connection.close()
             raise
+        self._db: Database = SQLiteDatabase(connection)
 
     def close(self) -> None:
         self._db.close()
@@ -112,8 +114,7 @@ class Checkpoints:
     def save(self, run_id: str, operation_id: str, expected_version: int, payload: str) -> int:
         for value in (run_id, operation_id, payload):
             nonempty(value, "checkpoint field")
-        with self._db:
-            self._db.execute("BEGIN IMMEDIATE")
+        with self._db.transaction(write=True):
             current = self.load(run_id)
             old = self._db.execute(
                 "SELECT payload, expected_version, result_version FROM operations "

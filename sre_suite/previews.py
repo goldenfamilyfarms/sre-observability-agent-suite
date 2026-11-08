@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 
 from .contracts import Environment, Scope, aware, nonempty
+from .database import Database, SQLiteDatabase
 from .serialization import scope_from_dict
 from .storage import prepare_schema
 
@@ -57,10 +58,10 @@ class PreviewRegistry:
     """Single-service pilot registry; a trusted controller supplies time and requests."""
 
     def __init__(self, path: str) -> None:
-        self._db = sqlite3.connect(path)
+        connection = sqlite3.connect(path)
         try:
             prepare_schema(
-                self._db,
+                connection,
                 "previews",
                 (
                     "CREATE TABLE IF NOT EXISTS previews (environment_id TEXT PRIMARY KEY, "
@@ -71,8 +72,9 @@ class PreviewRegistry:
                 ),
             )
         except Exception:
-            self._db.close()
+            connection.close()
             raise
+        self._db: Database = SQLiteDatabase(connection)
 
     def close(self) -> None:
         self._db.close()
@@ -87,8 +89,7 @@ class PreviewRegistry:
         if not request.requested_at <= now < request.expires_at:
             raise ValueError("preview request is expired or future-dated")
         payload = _encode(request)
-        with self._db:
-            self._db.execute("BEGIN IMMEDIATE")
+        with self._db.transaction(write=True):
             old = self._db.execute(
                 "SELECT payload, closed FROM previews WHERE environment_id=?",
                 (request.scope.environment_id,),
@@ -126,8 +127,7 @@ class PreviewRegistry:
         """Tombstone even an expired generation. This does not claim resource deletion."""
         aware(now)
         nonempty(reason, "termination reason")
-        with self._db:
-            self._db.execute("BEGIN IMMEDIATE")
+        with self._db.transaction(write=True):
             row = self._db.execute(
                 "SELECT payload, closed FROM previews WHERE environment_id=?",
                 (scope.environment_id,),

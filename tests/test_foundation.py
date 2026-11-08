@@ -149,7 +149,7 @@ class MemoryTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = str(Path(self.temp.name) / "memory.db")
-        self.store = KnowledgeStore(self.path)
+        self.store = KnowledgeStore(self.path, frozenset({"VERSION"}))
         self.addCleanup(self.store.close)
         self.ticket = example_ticket(NOW)
         self.finding = Finding(
@@ -179,11 +179,32 @@ class MemoryTests(unittest.TestCase):
         self.assertEqual(second.events(), ((1, "finding-1", "verified"),))
 
     def test_conflict_is_disputed_without_overwriting_fact(self):
-        self.verify()
-        conflict = replace(self.finding, id="finding-2", value="conflicting-dependency")
+        finding = replace(
+            self.finding,
+            kind=MemoryKind.SEMANTIC,
+            predicate="VERSION",
+            value="1.0",
+        )
+        self.store.propose_finding(finding)
+        self.assertEqual(self.store.reconcile_finding(finding.id, 0, NOW), FindingState.VERIFIED)
+        conflict = replace(finding, id="finding-2", value="2.0")
         self.store.propose_finding(conflict)
         self.assertEqual(self.store.reconcile_finding(conflict.id, 1, NOW), FindingState.DISPUTED)
-        self.assertEqual(self.store.get_dependency_graph(self.ticket.scope, NOW), (self.finding,))
+        self.assertEqual(
+            self.store.get_context_snapshot(self.ticket.scope, NOW).findings, (finding,)
+        )
+
+    def test_graph_allows_multiple_calls_targets(self):
+        self.verify()
+        second_dependency = replace(self.finding, id="finding-2", value="cache")
+        self.store.propose_finding(second_dependency)
+        self.assertEqual(
+            self.store.reconcile_finding(second_dependency.id, 1, NOW), FindingState.VERIFIED
+        )
+        self.assertEqual(
+            self.store.get_dependency_graph(self.ticket.scope, NOW),
+            (self.finding, second_dependency),
+        )
 
     def test_proposal_retry_is_idempotent_but_key_reuse_rejected(self):
         self.verify()

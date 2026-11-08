@@ -80,8 +80,9 @@ def _decode(payload: str) -> Finding:
 
 
 class KnowledgeStore:
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, single_valued_predicates: frozenset[str] = frozenset()) -> None:
         self._db = sqlite3.connect(path)
+        self._single_valued_predicates = single_valued_predicates
         self._db.executescript("""
             CREATE TABLE IF NOT EXISTS metadata (id INTEGER PRIMARY KEY, version INTEGER NOT NULL);
             INSERT OR IGNORE INTO metadata VALUES (1, 0);
@@ -143,6 +144,7 @@ class KnowledgeStore:
                 and old.kind == finding.kind
                 and old.subject == finding.subject
                 and old.predicate == finding.predicate
+                and finding.predicate in self._single_valued_predicates
                 and old.value != finding.value
                 for old in (_decode(item[0]) for item in verified)
             )

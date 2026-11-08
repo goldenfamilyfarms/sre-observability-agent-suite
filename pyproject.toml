@@ -4,16 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sre-observability-agent-suite"
-version = "0.2.0"
+version = "0.4.0"
 description = "Local policy and evidence foundation for an SRE engineering agent suite"
 requires-python = ">=3.11"
 dependencies = []
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]==3.3.3"]
 
 [tool.setuptools.packages.find]
 include = ["sre_suite*"]
 
 [tool.setuptools.package-data]
-sre_suite = ["py.typed", "catalog.json"]
+sre_suite = ["py.typed", "catalog.json", "migrations/*.sql"]
 
 [tool.mypy]
 python_version = "3.11"

@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Protocol
 
 from .contracts import Evidence, Scope
+from .database import Database, SQLiteDatabase
 from .storage import prepare_schema
 
 
@@ -27,10 +28,10 @@ class EvidenceStore:
     MAX_BYTES = 1_048_576
 
     def __init__(self, path: str) -> None:
-        self._db = sqlite3.connect(path)
+        connection = sqlite3.connect(path)
         try:
             prepare_schema(
-                self._db,
+                connection,
                 "evidence",
                 (
                     "CREATE TABLE IF NOT EXISTS evidence_objects "
@@ -38,8 +39,9 @@ class EvidenceStore:
                 ),
             )
         except Exception:
-            self._db.close()
+            connection.close()
             raise
+        self._db: Database = SQLiteDatabase(connection)
 
     def close(self) -> None:
         self._db.close()
@@ -52,8 +54,7 @@ class EvidenceStore:
         if hashlib.sha256(content).hexdigest() != evidence.sha256:
             raise ValueError("evidence content digest mismatch")
         encoded = metadata(evidence)
-        with self._db:
-            self._db.execute("BEGIN IMMEDIATE")
+        with self._db.transaction(write=True):
             old = self._db.execute(
                 "SELECT metadata, content FROM evidence_objects WHERE id=?", (evidence.id,)
             ).fetchone()
@@ -78,3 +79,15 @@ class EvidenceStore:
             and len(row[1]) <= self.MAX_BYTES
             and hashlib.sha256(row[1]).hexdigest() == evidence.sha256
         )
+
+    def read(self, evidence: Evidence, scope: Scope, now: datetime) -> bytes:
+        """Read only bytes matching the complete supplied metadata, scope and digest."""
+        with self._db.transaction(write=False):
+            if not self.verify(evidence, scope, now):
+                raise ValueError("evidence unavailable")
+            row = self._db.execute(
+                "SELECT content FROM evidence_objects WHERE id=?", (evidence.id,)
+            ).fetchone()
+            if row is None or not isinstance(row[0], bytes):
+                raise ValueError("evidence unavailable")
+            return row[0]

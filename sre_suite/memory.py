@@ -11,6 +11,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from .contracts import Evidence, JiraExecutionTicket, Scope, aware, nonempty
+from .database import Database, SQLiteDatabase
 from .evidence import EvidenceVerifier
 from .serialization import scope_from_dict
 from .storage import prepare_schema
@@ -91,12 +92,12 @@ class KnowledgeStore:
         evidence: EvidenceVerifier,
         single_valued_predicates: frozenset[str] = frozenset(),
     ) -> None:
-        self._db = sqlite3.connect(path)
+        connection = sqlite3.connect(path)
         self._evidence = evidence
         self._single_valued_predicates = single_valued_predicates
         try:
             prepare_schema(
-                self._db,
+                connection,
                 "knowledge",
                 (
                     "CREATE TABLE IF NOT EXISTS metadata "
@@ -109,20 +110,23 @@ class KnowledgeStore:
                 ),
             )
         except Exception:
-            self._db.close()
+            connection.close()
             raise
+        self._db: Database = SQLiteDatabase(connection)
 
     def close(self) -> None:
         self._db.close()
 
     @property
     def version(self) -> int:
-        return int(self._db.execute("SELECT version FROM metadata WHERE id = 1").fetchone()[0])
+        row = self._db.execute("SELECT version FROM metadata WHERE id = 1").fetchone()
+        if row is None:
+            raise ValueError("knowledge version is missing")
+        return int(row[0])
 
     def propose_finding(self, finding: Finding) -> None:
         payload = _encode(finding)
-        with self._db:
-            self._db.execute("BEGIN IMMEDIATE")
+        with self._db.transaction(write=True):
             existing = self._db.execute(
                 "SELECT payload FROM findings WHERE id = ?", (finding.id,)
             ).fetchone()
@@ -139,8 +143,7 @@ class KnowledgeStore:
         self, finding_id: str, expected_version: int, now: datetime
     ) -> FindingState:
         aware(now)
-        with self._db:
-            self._db.execute("BEGIN IMMEDIATE")
+        with self._db.transaction(write=True):
             if self.version != expected_version:
                 raise ValueError("knowledge version changed; rebuild context")
             row = self._db.execute(
@@ -177,8 +180,7 @@ class KnowledgeStore:
     def get_context_snapshot(self, scope: Scope, now: datetime) -> ContextSnapshot:
         aware(now)
         # One read transaction keeps the version and facts consistent across connections.
-        with self._db:
-            self._db.execute("BEGIN")
+        with self._db.transaction(write=False):
             version = self.version
             rows = self._db.execute(
                 "SELECT payload FROM findings WHERE state = ? ORDER BY id",

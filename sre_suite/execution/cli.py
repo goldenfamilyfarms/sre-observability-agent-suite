@@ -95,6 +95,10 @@ def main() -> None:
     commands.add_parser("check-config")
     commands.add_parser("start").add_argument("spec")
     commands.add_parser("preflight").add_argument("spec")
+    pilot = commands.add_parser("pilot-setup")
+    pilot.add_argument("manifest")
+    pilot.add_argument("--baseline", required=True)
+    pilot.add_argument("--output", required=True)
     export = commands.add_parser("export-patch")
     export.add_argument("workflow_id")
     export.add_argument("--digest", required=True)
@@ -103,7 +107,26 @@ def main() -> None:
         commands.add_parser(name).add_argument("workflow_id")
     args = parser.parse_args()
     try:
-        if args.command == "preflight":
+        if args.command == "pilot-setup":
+            from .pilot import PilotSetupError, setup_pilot
+
+            try:
+                result = setup_pilot(
+                    os.environ, Path(args.manifest), Path(args.baseline), Path(args.output)
+                )
+            except PilotSetupError as error:
+                print(
+                    json.dumps(
+                        {
+                            "status": "failed",
+                            "phase": error.phase,
+                            "remote_changes_may_exist": error.phase != "validation",
+                        }
+                    )
+                )
+                raise SystemExit(1) from None
+            print(json.dumps(result))
+        elif args.command == "preflight":
             from .readiness import exit_code, run_preflight
 
             result = asyncio.run(run_preflight(os.environ, Path(args.spec)))

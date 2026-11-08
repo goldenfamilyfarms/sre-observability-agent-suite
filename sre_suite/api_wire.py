@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import cast
 
 from .contracts import Evidence
+from .previews import PreviewRequest
 from .serialization import _unique_fields, scope_from_dict
 
 MAX_BODY_BYTES = 1_500_000
@@ -86,3 +87,28 @@ def content_from_wire(value: object) -> bytes:
     if len(content) > 1_048_576 or base64.b64encode(content).decode("ascii") != value:
         raise ValueError("invalid content size or noncanonical encoding")
     return content
+
+
+def preview_from_wire(value: object) -> PreviewRequest:
+    raw = fields(value, {"repository_id", "pr_number", "scope", "requested_at", "expires_at"})
+    repository_id, pr_number = raw["repository_id"], raw["pr_number"]
+    if type(repository_id) is not int or type(pr_number) is not int:
+        raise ValueError("preview identifiers must be integers")
+    scope = scope_from_dict(raw["scope"])
+    text(scope.service, 128)
+    return PreviewRequest(
+        repository_id,
+        pr_number,
+        scope,
+        datetime.fromisoformat(text(raw["requested_at"], 64)),
+        datetime.fromisoformat(text(raw["expires_at"], 64)),
+    )
+
+
+def registration_from_wire(value: object) -> tuple[PreviewRequest, int]:
+    raw = envelope(value, {"preview", "expected_generation"})
+    preview = preview_from_wire(raw["preview"])
+    expected = raw["expected_generation"]
+    if type(expected) is not int or expected != preview.scope.generation - 1:
+        raise ValueError("expected generation must immediately precede requested generation")
+    return preview, expected

@@ -1,6 +1,6 @@
 # Temporal, Claude Code and Jira execution pilot
 
-Package 0.7.0 implements an opt-in engineering execution path:
+Package 0.8.0 implements an opt-in engineering execution path:
 
 ```text
 Jira JSON ticket + exact preview scope
@@ -118,3 +118,7 @@ python -m unittest discover -s orchestration_tests -v
 Tests run a real local Temporal engine, replay its history, restart a worker after a saved result loses acknowledgement, cancel work, exhaust retries, reject duplicate workflow IDs, reconcile a lost Jira-write response, and exercise constrained Docker execution. Jira responses and model completions are fixtures; no live Jira issue or paid Claude completion was used for validation. A configured synthetic live pilot is still required before claiming operational readiness.
 
 API references: [Temporal Python SDK](https://github.com/temporalio/sdk-python), [Temporal test environment](https://python.temporal.io/temporalio.testing.WorkflowEnvironment.html), [Claude Code CLI](https://code.claude.com/docs/en/cli-reference), [Jira issues](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/), and [Jira issue properties](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-properties/).
+
+### Prepare the preview and baseline
+
+Use [pilot-setup](pilot-setup.md) to register an explicitly authorized generation, upload a baseline and generate `execution.json`. Supply the returned evidence metadata in the Jira execution contract before preflight. The command needs only the evidence service URL and separate controller/worker credentials; it does not require Temporal, Jira or model credentials and never starts a workflow.

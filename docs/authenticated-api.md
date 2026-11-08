@@ -6,7 +6,7 @@ Package 0.4.0 adds a WSGI application with authenticated evidence upload/read an
 
 This pilot uses operator-provisioned opaque service credentials. Generate each token from at least 32 cryptographically random bytes (for example, `secrets.token_urlsafe(32)`), deliver it privately, and configure only its SHA-256 digest. Syntax validation does not prove entropy; do not use passwords or example tokens. The authenticator checks the bearer digest, audience, activation and expiry on every request. Authentication identifies the configured service subject possessing the credential; it is not human identity verification or proof that an observation is true.
 
-Each credential contains an immutable set of `Grant(scope, action)` entries. Supported actions are `evidence:write`, `evidence:read` and `context:read`. A grant must match **every** Scope field: service, environment class, full revision, environment ID and generation. There are no wildcards, implicit roles or administrator headers. A new preview generation requires a newly authorized exact-scope grant. Credentials authorize only the listed actions; the same scope may be shared explicitly by several workers. Production is denied by this preview API even if someone configures a production grant. Existing production human-approval rules remain separate and unchanged.
+Each credential contains an immutable set of `Grant(scope, action)` entries. Worker actions are `evidence:write`, `evidence:read` and `context:read`. Version 0.8.0 adds the separate controller action `preview:register`, available only on an explicitly enabled registration endpoint. Never grant every enum member to a worker; use `WORKER_ACTIONS` or an explicit subset. A grant must match **every** Scope field: service, environment class, full revision, environment ID and generation. There are no wildcards, implicit roles or administrator headers. A new preview generation requires a newly authorized exact-scope grant. Credentials authorize only the listed actions; the same scope may be shared explicitly by several workers. Production is denied by this preview API even if someone configures a production grant. Existing production human-approval rules remain separate and unchanged.
 
 Only `Authorization: Bearer <token>` is accepted. Cookies, query tokens and caller-provided identity/role headers are not authentication. Requests require HTTPS as reported by the trusted WSGI host; the application ignores forwarded-protocol headers. A TLS-terminating proxy must be separately configured to strip spoofable forwarding headers, set trusted connection metadata and protect the backend connection. Bearer-header and transport choices follow [RFC 6750](https://datatracker.ietf.org/doc/html/rfc6750); this is **not** an OAuth authorization server or OIDC/JWT validator.
 
@@ -19,7 +19,7 @@ import os
 from datetime import UTC, datetime, timedelta
 from sre_suite.api import EvidenceContextApi
 from sre_suite.api_storage import postgres_backend
-from sre_suite.auth import Action, Credential, Grant, TokenAuthenticator
+from sre_suite.auth import WORKER_ACTIONS, Credential, Grant, TokenAuthenticator
 from sre_suite.contracts import Environment, Scope
 
 # Synthetic scope only. A trusted controller supplies authorized real scopes.
@@ -31,7 +31,7 @@ credential = Credential(
     audience='sre-evidence-pilot',
     not_before=now,
     expires_at=now + timedelta(minutes=30),
-    grants=frozenset(Grant(scope, action) for action in Action),
+    grants=frozenset(Grant(scope, action) for action in WORKER_ACTIONS),
 )
 auth = TokenAuthenticator('sre-evidence-pilot', (credential,))
 application = EvidenceContextApi(
@@ -39,18 +39,19 @@ application = EvidenceContextApi(
 )
 ```
 
-Run explicit PostgreSQL migrations and register an authorized current `PreviewRequest` before accepting requests. The API cannot allocate generations, create previews, issue credentials or approve releases. It opens/closes a fresh connection for each authorized operation; it never runs PostgreSQL migrations. For offline local tests, `sqlite_backend(path)` explicitly prepares the SQLite tables at application construction. File databases are required; independent `:memory:` connections do not share state.
+Run explicit PostgreSQL migrations and register an authorized current `PreviewRequest` before accepting worker requests. A trusted controller can register directly or through the opt-in [pilot registration endpoint](pilot-setup.md). The API cannot allocate generation numbers, provision cloud resources, issue credentials or approve releases. It opens/closes a fresh connection for each authorized operation; it never runs PostgreSQL migrations. For offline local tests, `sqlite_backend(path)` explicitly prepares the SQLite tables at application construction. File databases are required; independent `:memory:` connections do not share state.
 
 Supply `application` to a separately reviewed HTTPS-capable WSGI host. No production server/configuration is included. Python's [wsgiref reference server](https://docs.python.org/3/library/wsgiref.html) is used only in tests. Configure host-level header/body/time limits, connection limits, rate limiting, private credential distribution and safe operational logging before exposure. Never log Authorization, request/response bodies or DSNs. The library returns generic backend errors and emits no request logs. Durable access audit, distributed credential management and workload federation remain future work.
 
 ## Endpoint contracts
 
-All three endpoints use POST with `Content-Type: application/json` (optionally `charset=utf-8`) and a valid Content-Length. Query parameters, content encoding and transfer encoding are rejected by the application. The WSGI server must reject ambiguous/duplicate HTTP framing before constructing the environment. Every JSON object has an exact field set; duplicate keys, non-finite numbers, unsupported versions and coerced generation/version types are rejected. No browser CORS policy is enabled.
+All endpoints use POST with `Content-Type: application/json` (optionally `charset=utf-8`) and a valid Content-Length. Query parameters, content encoding and transfer encoding are rejected by the application. The WSGI server must reject ambiguous/duplicate HTTP framing before constructing the environment. Every JSON object has an exact field set; duplicate keys, non-finite numbers, unsupported versions and coerced generation/version types are rejected. No browser CORS policy is enabled.
 
 | Endpoint | Permission | Request | Successful response |
 | --- | --- | --- | --- |
 | `/v1/evidence` | `evidence:write` | `schema_version`, `evidence` without producer, `content_base64` | `schema_version`, stored `evidence` including server-owned producer and ID |
 | `/v1/evidence/read` | `evidence:read` | `schema_version`, complete stored `evidence` | `schema_version`, `evidence`, `content_base64` |
+| `/v1/previews/register` (opt-in) | `preview:register` | `schema_version`, `preview`, `expected_generation` | Same validated registration envelope |
 | `/v1/context` | `context:read` | `schema_version`, `scope`, `expected_version` | `schema_version`, `scope`, global knowledge `version`, verified `findings` |
 
 All successes return 200, including an identical upload retry. Supply `schema_version: 2`. The existing [scope contract](phase-1-foundation.md#identity-contracts) is unchanged.

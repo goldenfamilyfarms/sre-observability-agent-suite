@@ -15,6 +15,7 @@ from wsgiref.validate import validator
 from sre_suite.api import EvidenceContextApi, evidence_id
 from sre_suite.api_storage import _Evidence, sqlite_backend
 from sre_suite.auth import (
+    WORKER_ACTIONS,
     Action,
     Credential,
     Forbidden,
@@ -36,7 +37,7 @@ SECOND_TOKEN = "synthetic-test-token-" + "y" * 32
 AUDIENCE = "sre-evidence-test"
 
 
-def credential(scope, actions=tuple(Action), token=TOKEN, subject="worker-one"):
+def credential(scope, actions=WORKER_ACTIONS, token=TOKEN, subject="worker-one"):
     return Credential(
         subject,
         token_digest(token),

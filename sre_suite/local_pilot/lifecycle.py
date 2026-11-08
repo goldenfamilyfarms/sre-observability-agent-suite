@@ -57,6 +57,21 @@ def check_ports(config: LocalConfig) -> None:
             listener.close()
 
 
+def require_local_docker() -> None:
+    """Do not turn a local pilot request into a remote Docker operation."""
+    env = base_environment()
+    if env.get("DOCKER_CONTEXT"):
+        context = json.loads(command(["docker", "context", "inspect", env["DOCKER_CONTEXT"]]))
+        endpoint = context[0]["Endpoints"]["docker"]["Host"]
+    elif env.get("DOCKER_HOST"):
+        endpoint = env["DOCKER_HOST"]
+    else:
+        context = json.loads(command(["docker", "context", "inspect"]))
+        endpoint = context[0]["Endpoints"]["docker"]["Host"]
+    if not isinstance(endpoint, str) or not endpoint.startswith("unix:///"):
+        raise ValueError("local pilot requires a local Unix-socket Docker endpoint")
+
+
 def volume(config: LocalConfig) -> str:
     name = config.name + "-postgres"
     # Listing is read-only; never adopt or delete an unrelated Docker volume.
@@ -262,6 +277,7 @@ def up(
         if worker_env is not None:
             Settings.from_env(worker_env)
         with stack_lock(root):
+            require_local_docker()
             check_ports(config)
             phase = "postgres_image"
             command(["docker", "image", "inspect", config.postgres_image])

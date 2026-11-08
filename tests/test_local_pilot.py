@@ -32,6 +32,7 @@ from sre_suite.local_pilot.lifecycle import (
     check_ports,
     cleanup,
     postgres_args,
+    require_local_docker,
     stack_lock,
     stop_process,
     temporal_args,
@@ -295,6 +296,7 @@ class LifecycleTests(LocalFixture):
             patch("sre_suite.local_pilot.lifecycle.command", side_effect=command),
             patch("sre_suite.local_pilot.lifecycle.volume", return_value="owned-volume"),
             patch("sre_suite.local_pilot.lifecycle.check_ports"),
+            patch("sre_suite.local_pilot.lifecycle.require_local_docker"),
             patch("sre_suite.local_pilot.lifecycle.wait_ready", side_effect=wait),
             patch.dict("sys.modules", {"sre_suite.postgres": postgres}),
             patch("sre_suite.local_pilot.lifecycle.spawn", return_value=child),
@@ -356,3 +358,33 @@ class LifecycleTests(LocalFixture):
                 up(self.stack, self.config, worker, notify=lambda _: None, stopping=lambda: False)
         docker.assert_not_called()
         child.assert_not_called()
+
+    def test_remote_docker_host_or_context_cannot_turn_startup_into_remote_work(self):
+        for endpoint in (
+            "ssh://remote.example.invalid",
+            "tcp://127.0.0.1:2375",
+            "https://remote.example.invalid",
+        ):
+            with (
+                patch.dict(os.environ, {"DOCKER_HOST": endpoint, "DOCKER_CONTEXT": ""}),
+                patch("sre_suite.local_pilot.lifecycle.command") as command,
+            ):
+                with self.assertRaises(ValueError):
+                    require_local_docker()
+                command.assert_not_called()
+        with (
+            patch.dict(
+                os.environ, {"DOCKER_CONTEXT": "remote", "DOCKER_HOST": "unix:///local.sock"}
+            ),
+            patch(
+                "sre_suite.local_pilot.lifecycle.command",
+                return_value=json.dumps(
+                    [{"Endpoints": {"docker": {"Host": "ssh://remote.example.invalid"}}}]
+                ),
+            ) as command,
+        ):
+            with self.assertRaises(ValueError):
+                require_local_docker()
+            command.assert_called_once_with(["docker", "context", "inspect", "remote"])
+        with patch.dict(os.environ, {"DOCKER_HOST": "unix:///local.sock", "DOCKER_CONTEXT": ""}):
+            require_local_docker()

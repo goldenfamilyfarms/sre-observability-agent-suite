@@ -12,7 +12,7 @@ Version 0.9 provides an explicit local lifecycle for PostgreSQL, persistent Temp
 | Engineering worker | Host Python process using the existing Temporal worker; host Git, Claude CLI and Docker remain available without mounting a Docker socket in a worker container |
 | Persistence | PostgreSQL volume, Temporal SQLite state and private execution journal survive normal stop/restart |
 
-Install Python 3.11+, Git, OpenSSL, Docker and a Temporal CLI. The package does not install binaries or pull images during startup. The tested Temporal CLI is 1.10.0 (server 1.32.2); use a compatible reviewed version and retain it with the local state. The CLI's SQLite database is a development persistence mechanism, not a production cluster or disaster-recovery design. The [official CLI guide](https://docs.temporal.io/cli) and [server command reference](https://github.com/temporalio/documentation/blob/main/docs/cli/command-reference/server.mdx) describe `--db-filename` and `--headless`.
+Install Python 3.11+, Git, OpenSSL, Docker and a Temporal CLI. The selected Docker endpoint must be a local Unix socket; remote SSH/TCP contexts are rejected before startup mutations. The package does not install binaries or pull images during startup. The tested Temporal CLI is 1.10.0 (server 1.32.2); use a compatible reviewed version and retain it with the local state. The CLI's SQLite database is a development persistence mechanism, not a production cluster or disaster-recovery design. The [official CLI guide](https://docs.temporal.io/cli) and [server command reference](https://github.com/temporalio/documentation/blob/main/docs/cli/command-reference/server.mdx) describe `--db-filename` and `--headless`.
 
 ```sh
 python -m pip install '.[postgres,orchestration]'

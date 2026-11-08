@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from .config import LocalConfig, execution_environment, initialize
-from .lifecycle import StartupError, health, up
+from .lifecycle import StartupError, health, require_local_docker, up
 
 
 def main() -> None:
@@ -76,6 +76,8 @@ def main() -> None:
                 raise ValueError("choose an existing execution command")
             if argv[0] != "pilot-setup" and args.worker_env is None:
                 raise ValueError("worker environment is required")
+            if argv[0] in {"worker", "start", "preflight"}:
+                require_local_docker()
             env = execution_environment(
                 args.directory, config, args.worker_env, setup=argv[0] == "pilot-setup"
             )

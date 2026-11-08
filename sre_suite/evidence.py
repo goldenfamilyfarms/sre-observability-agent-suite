@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Protocol
 
 from .contracts import Evidence, Scope
+from .database import Database, SQLiteDatabase
 from .storage import prepare_schema
 
 
@@ -27,10 +28,10 @@ class EvidenceStore:
     MAX_BYTES = 1_048_576
 
     def __init__(self, path: str) -> None:
-        self._db = sqlite3.connect(path)
+        connection = sqlite3.connect(path)
         try:
             prepare_schema(
-                self._db,
+                connection,
                 "evidence",
                 (
                     "CREATE TABLE IF NOT EXISTS evidence_objects "
@@ -38,8 +39,9 @@ class EvidenceStore:
                 ),
             )
         except Exception:
-            self._db.close()
+            connection.close()
             raise
+        self._db: Database = SQLiteDatabase(connection)
 
     def close(self) -> None:
         self._db.close()
@@ -52,8 +54,7 @@ class EvidenceStore:
         if hashlib.sha256(content).hexdigest() != evidence.sha256:
             raise ValueError("evidence content digest mismatch")
         encoded = metadata(evidence)
-        with self._db:
-            self._db.execute("BEGIN IMMEDIATE")
+        with self._db.transaction(write=True):
             old = self._db.execute(
                 "SELECT metadata, content FROM evidence_objects WHERE id=?", (evidence.id,)
             ).fetchone()

@@ -18,6 +18,8 @@ This is a design inventory, not 120 implemented tests. The code tests the report
 
 `CertificationReport` includes schema/catalog versions, exact release, window, individual results, verdict and reasons. All 120 IDs must appear exactly once; missing, unknown or duplicate IDs produce INCOMPLETE. All result versions/releases/windows and fresh evidence must match. Evidence observation must fall inside the report window.
 
+Phase 1 advances the report schema to version 2: the release and every evidence/result scope must include the same environment ID and generation. Reports remain historical evaluations of their supplied scope; a controller must check the current generation before using one as a release gate. The aggregator does not query the preview registry or local evidence-content store itself.
+
 PASS requires a deterministic assertion success. FAIL on an applicable mandatory check yields FAILED when the report is otherwise complete. ERROR, INCONCLUSIVE, missing evidence or invalid scope yields INCOMPLETE. If both failure and incomplete evidence exist, the verdict is INCOMPLETE and individual failures remain in the results. NOT_APPLICABLE requires justification and evidence; applicability decisions must come from a trusted assessor. Every slot, even one marked not applicable, must have a completed definition before the draft can certify anything.
 
 The aggregator trusts typed inputs from adapters. It does not execute queries, authenticate a verifier, resolve evidence, evaluate arbitrary assertion code, enforce query deadlines or attest a deployed artifact. Those controls must be added before using PASSED as a shipping gate.

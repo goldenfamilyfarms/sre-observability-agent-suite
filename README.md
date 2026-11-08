@@ -2,7 +2,7 @@
 
 A public, generic foundation for Jira-driven observability engineering using Claude Code workers, an external durable orchestrator, and shared evidence-backed knowledge.
 
-**Status: Phase 0 assessment and a local foundation.** This is not a deployed agent platform. No live Jira, Claude Code, Temporal, Grafana, cloud, merge, or deployment adapter is included. All examples are synthetic.
+**Status: Phase 1 started; local preview identity, evidence and context foundation implemented.** This is not a deployed agent platform. No live Jira, Claude Code, Temporal, Grafana, cloud, merge, or deployment adapter is included. All examples are synthetic.
 
 ## Run locally
 
@@ -13,7 +13,7 @@ python -m unittest discover -v
 python -m sre_suite.demo
 ```
 
-The demo runs a fake engineering worker against scoped knowledge, records a ticket checkpoint, closes and reopens storage, and confirms recovery. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes.
+The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.2.0 requires explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
 
 For the same static checks as CI:
 
@@ -28,7 +28,9 @@ python -m ruff format --check .
 
 ## Included
 
-- Immutable typed execution tickets, scopes, evidence, worker requests/results, releases, and approval records.
+- Immutable typed execution tickets, scopes, evidence, worker requests/results, releases, and approval records bound to explicit environment instance and generation.
+- Persistent preview generation registry with optimistic updates, expiry checks, idempotent retries and closure tombstones.
+- Bounded local evidence storage with SHA-256 content verification, shared ticket context and stale worker-result rejection.
 - Dependency validation with cycle, duplicate, and missing-prerequisite rejection.
 - SQLite reference memory with evidence provenance, optimistic versions, conflict detection, graph edges, snapshots, and transactional change events.
 - Ticket transition guards and restartable local checkpoints with idempotency-key conflict detection.
@@ -39,6 +41,7 @@ python -m ruff format --check .
 ## Design and delivery
 
 - [Grounded Phase 0 assessment](docs/phase-0-assessment.md)
+- [Phase 1 implementation, breaking changes and storage migration](docs/phase-1-foundation.md)
 - [Architecture and trust boundaries](docs/architecture.md)
 - [Architecture decisions](docs/adr/README.md)
 - [Phased plan and acceptance gates](docs/implementation-plan.md)

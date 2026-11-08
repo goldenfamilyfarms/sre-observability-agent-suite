@@ -28,6 +28,8 @@ class Scope:
     service: str
     environment: Environment
     revision: str
+    environment_id: str
+    generation: int
 
     def __post_init__(self) -> None:
         nonempty(self.service, "service")
@@ -35,6 +37,12 @@ class Scope:
             raise ValueError("environment must be an explicit Environment")
         if not re.fullmatch(r"[0-9a-f]{40}", self.revision):
             raise ValueError("revision must be a full lowercase Git SHA")
+        if not isinstance(self.environment_id, str) or not re.fullmatch(
+            r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", self.environment_id
+        ):
+            raise ValueError("environment_id must be a DNS label of at most 63 characters")
+        if type(self.generation) is not int or not 1 <= self.generation <= 2**63 - 1:
+            raise ValueError("generation must be a positive signed 64-bit integer")
 
 
 @dataclass(frozen=True)

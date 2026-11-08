@@ -10,7 +10,10 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import StrEnum
 
-from .contracts import Environment, Evidence, Scope, aware, nonempty
+from .contracts import Evidence, JiraExecutionTicket, Scope, aware, nonempty
+from .evidence import EvidenceVerifier
+from .serialization import scope_from_dict
+from .storage import prepare_schema
 
 
 class MemoryKind(StrEnum):
@@ -52,16 +55,18 @@ class ContextSnapshot:
 
 
 def _encode(finding: Finding) -> str:
-    return json.dumps(asdict(finding), default=str, sort_keys=True)
+    return json.dumps({"schema_version": 2, **asdict(finding)}, default=str, sort_keys=True)
 
 
 def _decode(payload: str) -> Finding:
     data = json.loads(payload)
-    scope = Scope(**{**data["scope"], "environment": Environment(data["scope"]["environment"])})
+    if data.get("schema_version") != 2:
+        raise ValueError("unsupported finding schema version")
+    scope = scope_from_dict(data["scope"])
     raw = data["evidence"]
     evidence = Evidence(
         id=raw["id"],
-        scope=scope,
+        scope=scope_from_dict(raw["scope"]),
         uri=raw["uri"],
         sha256=raw["sha256"],
         observed_at=datetime.fromisoformat(raw["observed_at"]),
@@ -80,19 +85,32 @@ def _decode(payload: str) -> Finding:
 
 
 class KnowledgeStore:
-    def __init__(self, path: str, single_valued_predicates: frozenset[str] = frozenset()) -> None:
+    def __init__(
+        self,
+        path: str,
+        evidence: EvidenceVerifier,
+        single_valued_predicates: frozenset[str] = frozenset(),
+    ) -> None:
         self._db = sqlite3.connect(path)
+        self._evidence = evidence
         self._single_valued_predicates = single_valued_predicates
-        self._db.executescript("""
-            CREATE TABLE IF NOT EXISTS metadata (id INTEGER PRIMARY KEY, version INTEGER NOT NULL);
-            INSERT OR IGNORE INTO metadata VALUES (1, 0);
-            CREATE TABLE IF NOT EXISTS findings (
-                id TEXT PRIMARY KEY, payload TEXT NOT NULL, state TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS events (
-                version INTEGER PRIMARY KEY, finding_id TEXT NOT NULL, state TEXT NOT NULL
-            );
-        """)
+        try:
+            prepare_schema(
+                self._db,
+                "knowledge",
+                (
+                    "CREATE TABLE IF NOT EXISTS metadata "
+                    "(id INTEGER PRIMARY KEY, version INTEGER NOT NULL)",
+                    "INSERT OR IGNORE INTO metadata VALUES (1, 0)",
+                    "CREATE TABLE IF NOT EXISTS findings "
+                    "(id TEXT PRIMARY KEY, payload TEXT NOT NULL, state TEXT NOT NULL)",
+                    "CREATE TABLE IF NOT EXISTS events "
+                    "(version INTEGER PRIMARY KEY, finding_id TEXT NOT NULL, state TEXT NOT NULL)",
+                ),
+            )
+        except Exception:
+            self._db.close()
+            raise
 
     def close(self) -> None:
         self._db.close()
@@ -132,10 +150,10 @@ class KnowledgeStore:
                 raise ValueError("unknown finding")
             finding = _decode(row[0])
             state = FindingState(row[1])
+            if not self._evidence.verify(finding.evidence, finding.scope, now):
+                raise ValueError("missing, invalid, stale, or mismatched evidence content")
             if state is not FindingState.PROPOSED:
                 return state
-            if not finding.evidence.valid_for(finding.scope, now):
-                raise ValueError("stale or future evidence")
             verified = self._db.execute(
                 "SELECT payload FROM findings WHERE state = ?", (FindingState.VERIFIED,)
             ).fetchall()
@@ -169,7 +187,7 @@ class KnowledgeStore:
             findings = tuple(
                 finding
                 for finding in (_decode(row[0]) for row in rows)
-                if finding.scope == scope and finding.evidence.valid_for(scope, now)
+                if finding.scope == scope and self._evidence.verify(finding.evidence, scope, now)
             )
             return ContextSnapshot(version, scope, findings)
 
@@ -179,6 +197,11 @@ class KnowledgeStore:
             for finding in self.get_context_snapshot(scope, now).findings
             if finding.kind is MemoryKind.GRAPH
         )
+
+    def get_ticket_context(self, ticket: JiraExecutionTicket, now: datetime) -> ContextSnapshot:
+        if not all(self._evidence.verify(item, ticket.scope, now) for item in ticket.evidence):
+            raise ValueError("ticket evidence could not be verified")
+        return self.get_context_snapshot(ticket.scope, now)
 
     def events(self) -> tuple[tuple[int, str, str], ...]:
         return tuple(

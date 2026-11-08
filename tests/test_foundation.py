@@ -7,6 +7,7 @@ from pathlib import Path
 from sre_suite.agents import AgentRequest, validate_result
 from sre_suite.contracts import Approval, Environment, GateResult, Release
 from sre_suite.demo import FakeWorker, example_ticket, run_demo
+from sre_suite.evidence import EvidenceStore
 from sre_suite.memory import Finding, FindingState, KnowledgeStore, MemoryKind
 from sre_suite.planning import execution_order
 from sre_suite.policy import PromotionPolicy, promotion_denials
@@ -149,9 +150,12 @@ class MemoryTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = str(Path(self.temp.name) / "memory.db")
-        self.store = KnowledgeStore(self.path, frozenset({"VERSION"}))
+        self.evidence_store = EvidenceStore(self.path)
+        self.addCleanup(self.evidence_store.close)
+        self.store = KnowledgeStore(self.path, self.evidence_store, frozenset({"VERSION"}))
         self.addCleanup(self.store.close)
         self.ticket = example_ticket(NOW)
+        self.evidence_store.put(self.ticket.evidence[0], b"synthetic baseline", NOW)
         self.finding = Finding(
             "finding-1",
             self.ticket.scope,
@@ -172,7 +176,7 @@ class MemoryTests(unittest.TestCase):
 
     def test_verified_graph_persists_across_reopen(self):
         self.assertEqual(self.verify(), FindingState.VERIFIED)
-        second = KnowledgeStore(self.path)
+        second = KnowledgeStore(self.path, self.evidence_store)
         self.addCleanup(second.close)
         self.assertEqual(second.get_dependency_graph(self.ticket.scope, NOW), (self.finding,))
         self.assertEqual(second.version, 1)
@@ -217,7 +221,7 @@ class MemoryTests(unittest.TestCase):
             self.store.propose_finding(replace(self.finding, value="other"))
 
     def test_stale_writer_rejected_across_connections(self):
-        second = KnowledgeStore(self.path)
+        second = KnowledgeStore(self.path, self.evidence_store)
         self.addCleanup(second.close)
         self.verify()
         with self.assertRaises(ValueError):
@@ -326,10 +330,10 @@ class WorkflowTests(unittest.TestCase):
     def test_checkpoint_restart_replay_and_compare_and_swap(self):
         with tempfile.TemporaryDirectory() as directory:
             path = str(Path(directory) / "checkpoints.db")
-            first = Checkpoints(path)
+            first = Checkpoints(path, self.ticket.scope)
             self.assertEqual(first.save("run", "ready", 0, "ready"), 1)
             first.close()
-            second = Checkpoints(path)
+            second = Checkpoints(path, self.ticket.scope)
             try:
                 self.assertEqual(second.load("run"), (1, "ready"))
                 self.assertEqual(second.save("run", "ready", 0, "ready"), 1)
@@ -345,7 +349,8 @@ class WorkflowTests(unittest.TestCase):
 
     def test_worker_result_binding_and_retry_limits(self):
         with tempfile.TemporaryDirectory() as directory:
-            memory = KnowledgeStore(str(Path(directory) / "memory.db"))
+            evidence = EvidenceStore(str(Path(directory) / "memory.db"))
+            memory = KnowledgeStore(str(Path(directory) / "memory.db"), evidence)
             try:
                 request = AgentRequest(
                     "run", self.ticket, memory.get_context_snapshot(self.ticket.scope, NOW)
@@ -363,6 +368,7 @@ class WorkflowTests(unittest.TestCase):
                     replace(request, max_attempts=1000)
             finally:
                 memory.close()
+                evidence.close()
 
     def test_local_vertical_slice(self):
         result = run_demo()

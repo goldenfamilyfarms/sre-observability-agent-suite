@@ -1,0 +1,44 @@
+{
+  "schema_version": 2,
+  "ticket": {
+    "key": "DEMO-1",
+    "workstream": "synthetic-request-log-correlation",
+    "scope": {
+      "service": "pilot-log-demo",
+      "environment": "development",
+      "revision": "2c2b46a6a43f7693c7d498b2b2099a98d31a32fb",
+      "environment_id": "preview-r1450500737-pr1",
+      "generation": 1
+    },
+    "repository": "goldenfamilyfarms/sre-observability-pilot-demo",
+    "current_state": "The demo returns bounded JSON request logs without trace_id correlation.",
+    "desired_state": "Valid synthetic request-context trace IDs appear in structured logs.",
+    "objective": "Implement validated trace_id correlation by changing app.py only.",
+    "implementation_scope": [
+      "Edit only app.py; test_app.py, acceptance.py and CI are immutable.",
+      "No packages, network calls, listeners, infrastructure or configuration changes."
+    ],
+    "dependencies": [],
+    "acceptance_criteria": [
+      "For GET /health, unknown routes and unsupported methods, preserve a valid trace_id exactly.",
+      "Valid means a string of exactly 32 lowercase hexadecimal characters, not all zeroes.",
+      "Omit trace_id for absent, nonstring, uppercase, wrong-length, nonhex, all-zero or newline input.",
+      "Preserve response status/body, route sanitization and the event/route/status log fields.",
+      "Never log raw context, arbitrary headers, request bodies, raw paths or extra fields.",
+      "Run python acceptance.py: all seven tests must pass with no failures, errors or skips."
+    ],
+    "qa_requirements": [
+      "Use the unchanged acceptance.py gate in the pinned network-disabled test container.",
+      "Confirm the baseline has exactly the expected missing-correlation failure."
+    ],
+    "telemetry_requirements": [
+      "Verify synthetic JSON log correlation only; do not claim real telemetry export or service certification."
+    ],
+    "delivery_requirements": [
+      "Open a draft PR against the explicitly configured demo base branch.",
+      "Record evidence and configured nonterminal Jira transitions; no merge or deployment."
+    ],
+    "rollback_strategy": "Discard the unmerged candidate branch/PR after review; no running service is changed.",
+    "evidence": []
+  }
+}

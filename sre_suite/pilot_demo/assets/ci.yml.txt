@@ -1,0 +1,30 @@
+name: Demo checks
+on:
+  pull_request:
+  push:
+    branches: [main, 'feat/**', 'sre/**']
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.11', '3.14']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m unittest test_app -v
+      - name: Validate bootstrap gap or candidate acceptance
+        env:
+          HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          if [ "$HEAD_BRANCH" = "feat/demo-baseline" ] || [ "$HEAD_BRANCH" = "main" ]; then
+            python acceptance.py --baseline-report || python acceptance.py
+          else
+            python acceptance.py
+          fi

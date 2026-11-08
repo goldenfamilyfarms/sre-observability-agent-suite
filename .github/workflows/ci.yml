@@ -39,7 +39,7 @@ jobs:
           python -m pip install .
           cd "$RUNNER_TEMP"
           python -m sre_suite.demo
-          python -c 'from sre_suite.certification import load_catalog; assert len(load_catalog().checks) == 120'
+          python -c 'from sre_suite.certification import load_catalog; from sre_suite.api import EvidenceContextApi; assert len(load_catalog().checks) == 120; assert len(EvidenceContextApi.ROUTES) == 3'
 
   postgres:
     runs-on: ubuntu-latest
@@ -77,7 +77,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: pip
       - run: python -m pip install ".[postgres]"
-      - name: Real PostgreSQL persistence and migration tests (no skips)
+      - name: Real PostgreSQL, authenticated API and HTTPS tests (no skips)
         run: python -m unittest discover -s integration_tests -v
       - name: Verify migrations are included in the installed package
         run: |

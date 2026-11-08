@@ -10,3 +10,4 @@
 | [006](006-dynamic-preview-environments.md) | Authorized GCP previews through Helm and Argo CD GitOps | Proposed; pilot and instance-scoped contracts required |
 | [007](007-instance-scoped-contracts.md) | Require instance/generation scope and quarantine unscoped legacy data | Accepted; implemented locally in Phase 1 increment 1 |
 | [008](008-postgresql-persistence.md) | Shared guards, explicit PostgreSQL migrations and serialized pilot writes | Accepted for Phase 1 persistence pilot |
+| [009](009-authenticated-scoped-api.md) | Authenticated service grants and transactional scoped evidence/context API | Accepted for Phase 1 preview pilot |

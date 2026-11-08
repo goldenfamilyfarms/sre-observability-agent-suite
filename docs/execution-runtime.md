@@ -1,17 +1,17 @@
 # Temporal, Claude Code and Jira execution pilot
 
-Package 0.5.0 implements an opt-in engineering execution path:
+Package 0.6.0 implements an opt-in engineering execution path:
 
 ```text
 Jira JSON ticket + exact preview scope
   -> validated context and evidence + exported Git commit
   -> Claude implementation -> independent Claude review
   -> isolated test container -> independent Claude QA
-  -> evidence-backed patch and optional Jira execution property
+  -> evidence-backed patch, optional draft PR and Jira status/result writeback
   -> human review
 ```
 
-Temporal owns durable progress, retries and cancellation. Each model role uses a fresh Claude Code CLI session. The adapter makes real CLI/API calls when enabled; automated tests substitute a CLI executable and Jira HTTP transport. A successful run creates a patch artifact, not a commit, PR, merge, deployment or service certificate. The implementation/review/QA sessions share one configured service principal; separate authenticated reviewer identities remain future work.
+Temporal owns durable progress, retries and cancellation. Each model role uses a fresh Claude Code CLI session. The adapter makes real CLI/API calls when enabled; automated tests substitute a CLI executable and Jira HTTP transport. A successful run creates a patch artifact and, when explicitly enabled, a commit on a new execution branch and draft PR. Follow the [publication guide](pr-and-jira-publication.md) for GitHub/Jira transition settings. No merge, deployment or service certificate is produced. The implementation/review/QA sessions share one configured service principal; separate authenticated reviewer identities remain future work.
 
 ## Private configuration
 
@@ -31,7 +31,7 @@ set +a
 python -m sre_suite.execution.cli check-config
 ```
 
-`check-config` validates configuration without contacting external services. It prints only validity and enable flags. Both Claude invocation and Jira writeback default to disabled; set `SRE_CLAUDE_ENABLED=true` to permit model calls and `SRE_JIRA_WRITES_ENABLED=true` to permit the execution-property write. Jira reads and authenticated evidence reads/uploads are part of an enabled execution even when Jira writeback is disabled.
+`check-config` validates configuration without contacting external services. It prints only validity and enable flags, including GitHub PR and Jira transition flags. Both Claude invocation and Jira writeback default to disabled; set `SRE_CLAUDE_ENABLED=true` to permit model calls and `SRE_JIRA_WRITES_ENABLED=true` to permit the execution-property write. Jira reads and authenticated evidence reads/uploads are part of an enabled execution even when Jira writeback is disabled.
 
 | Variables | Purpose |
 | --- | --- |
@@ -88,18 +88,18 @@ The destination must not exist. Exporting an implementation patch does not attes
 python -m sre_suite.execution.cli cancel WORKFLOW_ID
 ```
 
-When enabled, Jira writeback stores a deterministic JSON report at the issue property `sre.run.<SHA256 of execution ID>`. It includes scope, outcome, stage evidence references and patch checksum, with `merged=false` and `deployed=false`. Existing identical content is accepted on retry; conflicting content is rejected. No issue comments, new issues or Jira status transitions are generated. Read the property through Jira's REST API or a separately configured UI integration. Issue properties inherit Jira access visibility; keep raw source, test output and evidence bytes in the private evidence service/journal, not the property.
+When enabled, Jira writeback stores a deterministic JSON report at the issue property `sre.run.<SHA256 of execution ID>`. It includes scope, outcome, stage evidence references and patch checksum, with `merged=false` and `deployed=false`. Existing identical content is accepted on retry; conflicting content is rejected. No issue comments or new issues are generated. Optional status transitions are described in the [publication guide](pr-and-jira-publication.md). Read the property through Jira's REST API or a separately configured UI integration. Issue properties inherit Jira access visibility; keep raw source, test output and evidence bytes in the private evidence service/journal, not the property.
 
 ## Boundaries, recovery and limits
 
-- Claude runs from an empty temporary directory with bare/restricted mode, no built-in tools, no MCP servers, no repository configuration, no slash commands and no session persistence. It receives selected source and context through stdin and returns validated replacement-file contents. Review/QA cannot propose edits. Jira/evidence tokens are not forwarded to the CLI. Selected source/context is sent to the configured model provider: supply only approved content.
+- Claude runs from an empty temporary directory with bare/restricted mode, no built-in tools, no MCP servers, no repository configuration, no slash commands and no session persistence. It receives selected source and context through stdin and returns validated replacement-file contents. Review/QA cannot propose edits. Jira/evidence/GitHub tokens are not forwarded to the CLI. Selected source/context is sent to the configured model provider: supply only approved content.
 - Tests use a fresh commit export with proposed edits in a Docker container. The filesystem and source mount are read-only, networking is disabled, the process runs as a non-root user, capabilities are dropped and CPU/memory/PID/time/output limits apply. Runtime credentials and the Docker socket are not mounted. The image must be approved; image-baked configuration and dependencies are operator-controlled. Docker is a pilot isolation boundary, not a proven defense against arbitrary hostile code or kernel exploits.
 - The source export is limited to 2,000 entries/20 MB, rejects symlinks/special files, and excludes protected configuration. Model input is bounded to 500 KB; edits total at most 250 KB. This is a small-repository pilot.
 - Temporal activities retry transient HTTP failures at most three times; validation, authorization and model-output failures stop the run. Workflow timeout is four hours; activity heartbeat timeout is 45 seconds, throttled to one second. Subprocess loops heartbeat frequently and kill their process groups on cancellation. Blocking HTTP calls have a 20-second socket timeout; container cleanup may add 20 seconds. A container-local watchdog also stops tests if the host worker dies.
 - The journal saves model output atomically before evidence upload, so a lost activity acknowledgement can reuse the same bytes/timestamps. Evidence uploads and Jira property writes reconcile retries. Back up the journal and evidence store alongside Temporal history. Reliable shared filesystem locking is required; this is not an object-store or distributed journal implementation.
 - A crash after a model API call but before the result is saved can incur another charge. Claude's `--max-budget-usd` is an estimate and may overshoot; it is not a strict billing ceiling. External account spending controls remain necessary for a hard operational budget.
 - Each gate rechecks the full preview scope, Jira contract and canonical context. Evidence is bound to the saved artifact digest. Jira writeback is not transactional with a concurrent preview change; reports are scoped historical records and never grant promotion permission. Infrastructure failures can leave the workflow blocked without Jira writeback; inspect Temporal status and private artifacts.
-- Separate Claude sessions provide independent assessments, not separately authenticated people. There is no shipping adapter, production approval signal, production execution, automated PR publication, 120-check telemetry executor, or automatic non-production promotion in this increment. Existing explicit non-prod authorization and human production-approval policy remain unchanged.
+- Separate Claude sessions provide independent assessments, not separately authenticated people. There is no shipping adapter, production approval signal, production execution, 120-check telemetry executor, or automatic non-production promotion in this increment. Existing explicit non-prod authorization and human production-approval policy remain unchanged.
 
 ## Validation
 

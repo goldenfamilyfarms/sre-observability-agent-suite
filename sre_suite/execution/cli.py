@@ -110,6 +110,8 @@ def main() -> None:
                         "configuration_valid": True,
                         "claude_enabled": settings.claude_enabled,
                         "jira_writes_enabled": settings.jira_writes,
+                        "github_prs_enabled": settings.github_prs,
+                        "jira_transitions_enabled": bool(settings.jira_transitions),
                     }
                 )
             )

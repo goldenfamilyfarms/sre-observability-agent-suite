@@ -66,3 +66,7 @@ The subsequent [PostgreSQL increment](postgresql.md) implements the adapter and 
 ## Increment 4: durable execution pilot
 
 Version 0.5.0 adds optional Temporal orchestration, restricted Claude Code CLI execution, scoped Jira ticket intake/writeback, isolated container tests and artifact recovery. Existing version 2 scope contracts and database migrations remain unchanged. Follow the [runtime guide](execution-runtime.md); live-account acceptance remains pending private configuration.
+
+## Increment 5: review artifact publication
+
+Version 0.6.0 adds explicit GitHub PR publication and configured nonterminal Jira transitions without changing preview contracts or database migrations. Drain/reconcile old runs before upgrading: the manifest policy fingerprint now includes publication authority. See [setup, retry and partial-completion behavior](pr-and-jira-publication.md).

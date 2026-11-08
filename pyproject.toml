@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sre-observability-agent-suite"
+version = "0.1.0"
+description = "Local policy and evidence foundation for an SRE engineering agent suite"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools.packages.find]
+include = ["sre_suite*"]
+
+[tool.setuptools.package-data]
+sre_suite = ["py.typed", "catalog.json"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["sre_suite"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

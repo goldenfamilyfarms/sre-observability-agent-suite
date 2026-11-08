@@ -2,7 +2,7 @@
 
 These contracts define the intended worker boundary. This PR implements common `AgentRequest`, `AgentResult`, `EngineeringWorker`, and `JiraPort` types, a fake worker and result binding checks. The specialized roles below are designs, not installed agents.
 
-Every request binds execution ID, validated Jira ticket, exact scope, context version, attempt limit (1–3) and timeout (1–3600 seconds). Every result binds the same identifiers and includes scoped evidence. The trusted dispatcher validates the result, current knowledge version, identity and evidence freshness before applying it. An outcome string does not by itself pass a workflow gate.
+Every request binds execution ID, validated Jira ticket, exact scope (including environment ID/generation), context version, attempt limit (1–3) and timeout (1–3600 seconds). Every result binds the same identifiers and includes scoped evidence. The local PreviewCoordinator now validates current preview generation, shared context and stored evidence bytes at preparation/completion. An authenticated dispatcher, enforced execution budgets and external side-effect fencing are still required. An outcome string does not by itself pass a workflow gate.
 
 | Role / purpose | Required input → output | Allowed tools and side effects | Memory permission | Consumes → publishes | Success / failure |
 | --- | --- | --- | --- | --- | --- |

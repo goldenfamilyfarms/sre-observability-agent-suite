@@ -8,3 +8,4 @@
 | [004](004-shipping-authorization.md) | Exact-release authorization and human production approval | Accepted |
 | [005](005-certification.md) | Versioned 40/40/40 certification with fail-closed reports | Accepted; query implementation pending |
 | [006](006-dynamic-preview-environments.md) | Authorized GCP previews through Helm and Argo CD GitOps | Proposed; pilot and instance-scoped contracts required |
+| [007](007-instance-scoped-contracts.md) | Require instance/generation scope and quarantine unscoped legacy data | Accepted; implemented locally in Phase 1 increment 1 |

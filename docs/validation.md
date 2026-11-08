@@ -1,5 +1,9 @@
 # Foundation validation
 
+Phase 1 increment 1 validation uses the same pinned tools. The suite now has **70 tests**: the 39 original tests, the follow-on Phase 0 graph regression, and 30 Phase 1 tests. Local tests, the preview/evidence/context demo, strict mypy (14 source files), Ruff lint and formatting (18 Python files) pass. Added coverage includes instance/generation isolation, version-2 scope decoding, evidence content integrity, consistent worker snapshots, generation retry/closure/expiry, scoped checkpoints, lossless legacy quarantine and rollback after a subprocess exits inside a SQLite transaction. These are local/reference-adapter tests; PostgreSQL, Temporal and a real Claude Code worker remain untested and unimplemented. The PR's current CI run supplies the remote Python 3.11/3.14 results.
+
+## Phase 0 baseline results
+
 Local validation on 2026-11-07 used Python 3.14.6, mypy 1.19.1 and Ruff 0.14.10.
 
 | Check | Result |
@@ -26,6 +30,6 @@ CI runs the same checks on Python 3.11 and 3.14 and exercises the installed pack
 
 ## Limits
 
-These are local unit and reference-adapter tests. A database reopen models loss of process-local state; it does not prove distributed recovery or a real process kill during I/O. Test gates and ready certification definitions are synthetic. No live Claude Code, Temporal, Jira, telemetry, CI shipping, cloud or production system was exercised. Evidence content hashes and human identity were not authenticated by these adapters. No service is certified or deployed by this validation.
+These are local unit and reference-adapter tests. Phase 0 used database reopen tests; Phase 1 also exercises process exit during a local SQLite transaction. Neither proves distributed recovery. Test gates and ready certification definitions are synthetic. No live Claude Code, Temporal, Jira, telemetry, CI shipping, cloud or production system was exercised. Phase 1 verifies local evidence content hashes, but producer/human identity and factual claims are not authenticated by these adapters. No service is certified or deployed by this validation.
 
 The dynamic-environment addition is documentation only. Its Argo CD/GKE behavior references were checked against the linked official documentation; repository-relative links and whitespace were checked locally. The illustrative ApplicationSet has not been rendered with a real Helm chart, validated against an installed Argo CRD, applied to GKE, or tested for isolation/cleanup. ENV-1 through ENV-6 define the implementation and integration evidence still required.

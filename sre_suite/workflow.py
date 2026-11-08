@@ -5,7 +5,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-from .contracts import Evidence, JiraExecutionTicket, nonempty
+from .contracts import Evidence, JiraExecutionTicket, Scope, nonempty
+from .serialization import decode_scope, encode_scope
+from .storage import prepare_schema
 
 
 class TicketState(StrEnum):
@@ -77,26 +79,34 @@ def advance(
 class Checkpoints:
     """Single-machine CAS and idempotency exercise; not a durable orchestrator."""
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, scope: Scope) -> None:
         self._db = sqlite3.connect(path)
-        self._db.executescript("""
-            CREATE TABLE IF NOT EXISTS checkpoints (
-                run_id TEXT PRIMARY KEY, version INTEGER NOT NULL, payload TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS operations (
-                run_id TEXT, operation_id TEXT, payload TEXT NOT NULL,
-                expected_version INTEGER NOT NULL, result_version INTEGER NOT NULL,
-                PRIMARY KEY(run_id, operation_id)
-            );
-        """)
+        self._scope = scope
+        try:
+            prepare_schema(
+                self._db,
+                "checkpoints",
+                (
+                    "CREATE TABLE IF NOT EXISTS checkpoints (run_id TEXT PRIMARY KEY, "
+                    "version INTEGER NOT NULL, payload TEXT NOT NULL, scope TEXT NOT NULL)",
+                    "CREATE TABLE IF NOT EXISTS operations (run_id TEXT, operation_id TEXT, "
+                    "payload TEXT NOT NULL, expected_version INTEGER NOT NULL, "
+                    "result_version INTEGER NOT NULL, PRIMARY KEY(run_id, operation_id))",
+                ),
+            )
+        except Exception:
+            self._db.close()
+            raise
 
     def close(self) -> None:
         self._db.close()
 
     def load(self, run_id: str) -> tuple[int, str] | None:
         row = self._db.execute(
-            "SELECT version, payload FROM checkpoints WHERE run_id = ?", (run_id,)
+            "SELECT version, payload, scope FROM checkpoints WHERE run_id = ?", (run_id,)
         ).fetchone()
+        if row is not None and decode_scope(row[2]) != self._scope:
+            raise ValueError("checkpoint belongs to another scope or generation")
         return None if row is None else (int(row[0]), str(row[1]))
 
     def save(self, run_id: str, operation_id: str, expected_version: int, payload: str) -> int:
@@ -104,6 +114,7 @@ class Checkpoints:
             nonempty(value, "checkpoint field")
         with self._db:
             self._db.execute("BEGIN IMMEDIATE")
+            current = self.load(run_id)
             old = self._db.execute(
                 "SELECT payload, expected_version, result_version FROM operations "
                 "WHERE run_id = ? AND operation_id = ?",
@@ -113,15 +124,14 @@ class Checkpoints:
                 if old[0] != payload or old[1] != expected_version:
                     raise ValueError("idempotency key reused with different input")
                 return int(old[2])
-            current = self.load(run_id)
             version = current[0] if current else 0
             if version != expected_version:
                 raise ValueError("checkpoint version conflict")
             next_version = version + 1
             self._db.execute(
-                "INSERT INTO checkpoints VALUES (?, ?, ?) ON CONFLICT(run_id) DO UPDATE "
+                "INSERT INTO checkpoints VALUES (?, ?, ?, ?) ON CONFLICT(run_id) DO UPDATE "
                 "SET version = excluded.version, payload = excluded.payload",
-                (run_id, next_version, payload),
+                (run_id, next_version, payload, encode_scope(self._scope)),
             )
             self._db.execute(
                 "INSERT INTO operations VALUES (?, ?, ?, ?, ?)",

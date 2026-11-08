@@ -6,6 +6,7 @@ import re
 from collections.abc import Callable
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from ..api_wire import envelope, evidence_from_wire, text
@@ -49,13 +50,24 @@ class ExecutionRuntime:
         self.settings = settings
         self.jira = jira or JiraClient(settings)
         self.github = github or GitHubClient(settings)
-        self.evidence = evidence or EvidenceClient(settings.evidence_url, settings.evidence_token)
+        self.evidence = evidence or EvidenceClient(
+            settings.evidence_url, settings.evidence_token, local_ca_file=settings.evidence_ca_file
+        )
         self.worker = worker or ClaudeCodeWorker(settings)
         self.tests = tests or ContainerTests(settings)
         self.journal = Journal(settings.work_root)
         self.clock = clock
         self.policy = digest(
             {
+                **(
+                    {
+                        "evidence_ca_sha256": hashlib.sha256(
+                            Path(settings.evidence_ca_file).read_bytes()
+                        ).hexdigest()
+                    }
+                    if settings.evidence_ca_file
+                    else {}
+                ),
                 "repository": settings.repository,
                 "jira_url": settings.jira_url,
                 "evidence_url": settings.evidence_url,

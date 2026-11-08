@@ -76,3 +76,5 @@ Version 0.6.0 adds explicit GitHub PR publication and configured nonterminal Jir
 Version 0.7.0 adds a specification-bound readiness report and read-only service/local prerequisite probes. Preview contracts, database migrations, runtime policy fingerprints and execution authorization remain unchanged. See [preflight exit codes and limitations](preflight.md); a successful read observation does not prove write or inference authority.
 
 Version 0.8.0 adds an opt-in controller registration endpoint and [pilot setup command](pilot-setup.md), with separate exact-scope registration authority, idempotent evidence upload and private execution-spec output. Worker grants, runtime generation fencing, PostgreSQL migrations and production policy remain unchanged.
+
+Version 0.9.0 adds [explicit local startup](local-pilot.md): persistent PostgreSQL and Temporal development state, a local TLS host, scoped credential provisioning and isolated worker configuration. Preview/generation contracts and migrations remain unchanged. Workflow starts remain explicit.

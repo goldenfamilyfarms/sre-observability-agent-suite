@@ -50,3 +50,5 @@ QA planning runs alongside implementation. Ticket checks are targeted; final ser
 ### Pilot input preparation
 
 The [pilot setup command](pilot-setup.md) registers an explicitly authorized preview generation, uploads and verifies a baseline, and writes a private execution spec. It does not provision ENV-2 infrastructure or satisfy live execution acceptance. The operator must still authorize the exact scope, populate the Jira execution contract with returned evidence, run preflight and separately initiate any live pilot.
+
+The [local startup package](local-pilot.md) makes the bounded Phase 1 pilot repeatable and tests full local stop/start. Real account permissions, paid model execution and a complete live Jira-to-PR acceptance run remain open; local startup does not provision GCP environments or execute the 120-check certification catalog.

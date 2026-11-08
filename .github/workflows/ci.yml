@@ -41,6 +41,7 @@ jobs:
           python -m sre_suite.demo
           python -m sre_suite.execution.cli preflight --help
           python -m sre_suite.execution.cli pilot-setup --help
+          python -m sre_suite.local_pilot --help
           python -c 'from sre_suite.certification import load_catalog; from sre_suite.api import EvidenceContextApi; assert len(load_catalog().checks) == 120; assert len(EvidenceContextApi.ROUTES) == 3'
 
   postgres:
@@ -105,3 +106,42 @@ jobs:
       - run: docker pull python@sha256:65bd3d9f1d7fa268dd1909973ba7eb4bdf41f6dcf2cfbe76ba9528b170f3fd79
       - name: Real Temporal replay, recovery, cancellation and constrained container tests
         run: python -m unittest discover -s orchestration_tests -v
+
+  local-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.14']
+    env:
+      SRE_TEST_POSTGRES_IMAGE: postgres@sha256:748a18a54d3842d43bc156f0840d78029b8d349e0feca98c12b9c4ce3404a6b3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install ".[postgres,orchestration]"
+      - run: docker pull "$SRE_TEST_POSTGRES_IMAGE"
+      - name: Prepare SDK-compatible Temporal CLI for local acceptance
+        run: |
+          python - <<'PY'
+          import asyncio, os
+          from pathlib import Path
+          from temporalio.testing import WorkflowEnvironment
+          directory = Path(os.environ['RUNNER_TEMP']) / 'sre-local-temporal'
+          directory.mkdir(mode=0o700)
+          async def prepare():
+              server = await WorkflowEnvironment.start_local(download_dest_dir=str(directory), ui=False)
+              await server.shutdown()
+          asyncio.run(prepare())
+          binaries = [p for p in directory.iterdir() if p.is_file() and os.access(p, os.X_OK)]
+          assert len(binaries) == 1
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('SRE_TEST_TEMPORAL_BINARY=' + str(binaries[0]) + '\n')
+          PY
+      - name: Real local startup, TLS, worker readiness and persistent restart
+        run: python -m unittest discover -s local_pilot_tests -v

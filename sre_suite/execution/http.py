@@ -1,9 +1,12 @@
 """Bounded HTTPS requests with redirect refusal and redacted failures."""
 
 import json
+import ssl
 from collections.abc import Mapping
+from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.parse import urlparse
+from urllib.request import HTTPRedirectHandler, HTTPSHandler, Request, build_opener
 
 from ..api_wire import decode
 from .config import https_url
@@ -30,14 +33,23 @@ class JsonHttp:
         *,
         headers: Mapping[str, str] | None = None,
         timeout: float = 20,
+        local_ca_file: str | None = None,
     ) -> None:
         if not 0 < timeout <= 20:
             raise ValueError("invalid HTTP timeout")
-        self.base = https_url(base)
+        self.base = https_url(base, allow_loopback=bool(local_ca_file))
         self._authorization = authorization
         self._headers = dict(headers or {})
         self._timeout = timeout
-        self._opener = build_opener(NoRedirect())
+        if local_ca_file:
+            if urlparse(self.base).hostname not in {"127.0.0.1", "localhost"}:
+                raise ValueError("pilot CA overrides are restricted to loopback evidence services")
+            if not Path(local_ca_file).is_absolute():
+                raise ValueError("pilot CA path must be absolute")
+            context = ssl.create_default_context(cafile=local_ca_file)
+            self._opener = build_opener(NoRedirect(), HTTPSHandler(context=context))
+        else:
+            self._opener = build_opener(NoRedirect())
 
     def call(self, method: str, path: str, payload: object = None) -> object:
         if not path.startswith("/") or path.startswith("//") or ".." in path:

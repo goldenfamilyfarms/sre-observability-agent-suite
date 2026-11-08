@@ -1,6 +1,6 @@
 # Temporal, Claude Code and Jira execution pilot
 
-Package 0.8.0 implements an opt-in engineering execution path:
+Package 0.9.0 implements an opt-in engineering execution path:
 
 ```text
 Jira JSON ticket + exact preview scope
@@ -69,6 +69,7 @@ After preparing the private environment, source, journal and worker, run `python
 With the environment exported and the external services available, start the worker in one terminal:
 
 ```sh
+unset SRE_PILOT_SETUP_TOKEN  # Controller authority is only for setup.
 python -m sre_suite.execution.cli worker
 ```
 
@@ -122,3 +123,7 @@ API references: [Temporal Python SDK](https://github.com/temporalio/sdk-python),
 ### Prepare the preview and baseline
 
 Use [pilot-setup](pilot-setup.md) to register an explicitly authorized generation, upload a baseline and generate `execution.json`. Supply the returned evidence metadata in the Jira execution contract before preflight. The command needs only the evidence service URL and separate controller/worker credentials; it does not require Temporal, Jira or model credentials and never starts a workflow.
+
+### Local service startup
+
+The [local pilot package](local-pilot.md) supplies PostgreSQL, migrations, a persistent Temporal development server, local HTTPS evidence hosting and optional worker startup. It keeps workflow execution separate and preserves existing preview-generation guards.

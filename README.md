@@ -2,7 +2,7 @@
 
 A public, generic foundation for Jira-driven observability engineering using Claude Code workers, an external durable orchestrator, and shared evidence-backed knowledge.
 
-**Status: Phase 1 execution pilot implemented.** Preview identity, PostgreSQL persistence, authenticated evidence/context APIs, Temporal orchestration, restricted Claude Code workers and Jira adapters are included. Version 0.6 adds opt-in automatic draft PRs and bounded Jira status transitions. Live Jira/model acceptance remains pending your private environment configuration. No merge, deployment, cloud or telemetry-query adapter is included; examples are synthetic. Start with the [runtime setup guide](docs/execution-runtime.md) and [.env.example](.env.example).
+**Status: Phase 1 execution pilot implemented.** Preview identity, PostgreSQL persistence, authenticated evidence/context APIs, Temporal orchestration, restricted Claude Code workers and Jira adapters are included. Version 0.7 includes opt-in automatic draft PRs, bounded Jira status transitions and a read-only preflight command. Live Jira/model acceptance remains pending your private environment configuration. No merge, deployment, cloud or telemetry-query adapter is included; examples are synthetic. Start with the [runtime setup guide](docs/execution-runtime.md) and [.env.example](.env.example).
 
 ## Run locally
 
@@ -13,7 +13,7 @@ python -m unittest discover -v
 python -m sre_suite.demo
 ```
 
-The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.6.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
+The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.7.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
 
 For the same static checks as CI:
 
@@ -27,6 +27,8 @@ python -m ruff format --check .
 ```
 
 ## Included
+
+- Specification-bound read-only preflight with redacted diagnostics, generation checks and explicit unverified write/inference capabilities.
 
 - Optional Temporal engine with bounded retries, cancellation, replay tests and saved-result recovery.
 - Real opt-in Claude Code CLI, GitHub draft PR and Jira Cloud adapters, isolated test execution, evidence-backed patches, scoped Jira results and configured nonterminal status transitions.
@@ -47,6 +49,7 @@ python -m ruff format --check .
 
 - [Grounded Phase 0 assessment](docs/phase-0-assessment.md)
 - [Phase 1 implementation, breaking changes and storage migration](docs/phase-1-foundation.md)
+- [Read-only preflight and readiness report](docs/preflight.md)
 - [Automatic draft PRs and Jira status transitions](docs/pr-and-jira-publication.md)
 - [Temporal, Claude Code and Jira runtime](docs/execution-runtime.md)
 - [Authenticated evidence and scoped context API](docs/authenticated-api.md)

@@ -13,3 +13,4 @@
 | [009](009-authenticated-scoped-api.md) | Authenticated service grants and transactional scoped evidence/context API | Accepted for Phase 1 preview pilot |
 | [010](010-temporal-execution-pilot.md) | Temporal workflow, restricted Claude Code and scoped Jira execution | Accepted for Phase 1 pilot; live-account acceptance pending |
 | [011](011-draft-pr-and-jira-transitions.md) | Guarded draft PR publication and nonterminal Jira transitions | Accepted for execution pilot; live acceptance pending |
+| [012](012-read-only-preflight.md) | Read-only preflight with explicit unverified capabilities | Accepted for execution pilot |

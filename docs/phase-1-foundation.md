@@ -70,3 +70,7 @@ Version 0.5.0 adds optional Temporal orchestration, restricted Claude Code CLI e
 ## Increment 5: review artifact publication
 
 Version 0.6.0 adds explicit GitHub PR publication and configured nonterminal Jira transitions without changing preview contracts or database migrations. Drain/reconcile old runs before upgrading: the manifest policy fingerprint now includes publication authority. See [setup, retry and partial-completion behavior](pr-and-jira-publication.md).
+
+## Increment 6: read-only preflight
+
+Version 0.7.0 adds a specification-bound readiness report and read-only service/local prerequisite probes. Preview contracts, database migrations, runtime policy fingerprints and execution authorization remain unchanged. See [preflight exit codes and limitations](preflight.md); a successful read observation does not prove write or inference authority.

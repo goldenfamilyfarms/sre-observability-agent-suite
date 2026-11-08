@@ -1,6 +1,6 @@
 # Temporal, Claude Code and Jira execution pilot
 
-Package 0.6.0 implements an opt-in engineering execution path:
+Package 0.7.0 implements an opt-in engineering execution path:
 
 ```text
 Jira JSON ticket + exact preview scope
@@ -59,6 +59,10 @@ The Temporal namespace and queue must be restricted to authorized operators/work
 5. Pre-pull the approved test image and verify that your configured test command runs meaningful assertions. The example image supports standard-library Python tests. Dependencies cannot be downloaded inside the test container.
 
 The fixture examples use expired synthetic timestamps and a placeholder revision deliberately. Replace them with fresh verified evidence; do not simply extend timestamps on old evidence. A changed generation, expired preview/evidence, altered ticket, unmet dependency, changed execution policy or changed context blocks subsequent work. Context changes require a newly reviewed execution.
+
+## Preflight
+
+After preparing the private environment, source, journal and worker, run `python -m sre_suite.execution.cli preflight examples/execution.json`. It performs read-only checks for this exact scope and reports capabilities that still need a live pilot. Exit 1 means blocked; exit 2 means read checks passed with unverified capabilities. It does not start work or grant permission. See the [preflight guide](preflight.md).
 
 ## Start, inspect and retrieve the patch
 

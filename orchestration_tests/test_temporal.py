@@ -198,3 +198,52 @@ class TemporalTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(WorkflowFailureError):
                 await handle.result()
         self.assertEqual(self.fixture.jira_http.puts, 0)
+
+    async def test_preflight_observes_worker_without_starting_any_workflow(self):
+        from sre_suite.execution.readiness_temporal import inspect_temporal
+
+        identity = execution_key(self.fixture.spec)
+        async with self.worker():
+            for _ in range(20):
+                checks = await inspect_temporal(self.environment.client, self.queue, identity)
+                if not any(c.status == "fail" for c in checks):
+                    break
+                await asyncio.sleep(0.1)
+            self.assertFalse(any(c.status == "fail" for c in checks), checks)
+            self.assertEqual({c.name: c.status for c in checks}["temporal_execution_id"], "pass")
+            workflows = [w async for w in self.environment.client.list_workflows()]
+        self.assertEqual(workflows, [])
+        self.assertEqual(self.fixture.jira_http.puts, 0)
+        self.assertEqual(list(self.fixture.settings.work_root.iterdir()), [])
+
+    async def test_preflight_blocks_missing_pollers_and_existing_execution_id(self):
+        from sre_suite.execution.readiness_temporal import inspect_temporal
+
+        identity = execution_key(self.fixture.spec)
+        checks = await inspect_temporal(self.environment.client, self.queue, identity)
+        statuses = {c.name: c.status for c in checks}
+        self.assertEqual(statuses["temporal_workflow_pollers"], "fail")
+        self.assertEqual(statuses["temporal_activity_pollers"], "fail")
+        async with self.worker():
+            await self.environment.client.execute_workflow(
+                TicketExecution.run, self.fixture.spec, id=identity, task_queue=self.queue
+            )
+            checks = await inspect_temporal(self.environment.client, self.queue, identity)
+        self.assertEqual({c.name: c.status for c in checks}["temporal_execution_id"], "fail")
+        self.assertEqual(len([w async for w in self.environment.client.list_workflows()]), 1)
+
+    async def test_preflight_connects_read_only_and_rejects_missing_namespace(self):
+        from sre_suite.execution.readiness_temporal import probe
+
+        env = {
+            "SRE_TEMPORAL_ADDRESS": self.environment.client.service_client.config.target_host,
+            "SRE_TEMPORAL_TASK_QUEUE": self.queue,
+            "SRE_TEMPORAL_NAMESPACE": "missing-fixture",
+        }
+        checks = await probe(env, execution_key(self.fixture.spec))
+        self.assertTrue(any(c.status == "fail" for c in checks))
+        env["SRE_TEMPORAL_NAMESPACE"] = "default"
+        async with self.worker():
+            checks = await probe(env, execution_key(self.fixture.spec))
+        self.assertEqual({c.name: c.status for c in checks}["temporal_namespace"], "pass")
+        self.assertEqual([w async for w in self.environment.client.list_workflows()], [])

@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-      - run: python -m pip install -r requirements-dev.txt ".[postgres]"
+      - run: python -m pip install -r requirements-dev.txt ".[postgres,orchestration]"
       - run: python -m unittest discover -v
       - run: python -m sre_suite.demo
       - run: python -m mypy sre_suite
@@ -83,3 +83,23 @@ jobs:
         run: |
           cd "$RUNNER_TEMP"
           python -c 'from sre_suite.postgres import migrations; assert [m.version for m in migrations()] == [1, 2]; assert all(m.source for m in migrations())'
+
+  orchestration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.14']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: python -m pip install ".[orchestration]"
+      - run: docker pull python@sha256:65bd3d9f1d7fa268dd1909973ba7eb4bdf41f6dcf2cfbe76ba9528b170f3fd79
+      - name: Real Temporal replay, recovery, cancellation and constrained container tests
+        run: python -m unittest discover -s orchestration_tests -v

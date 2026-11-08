@@ -1,0 +1,12 @@
+{
+  "schema_version": 2,
+  "ticket_key": "DEMO-1",
+  "scope": {
+    "service": "demo-service",
+    "environment": "development",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "environment_id": "preview-r1-pr1",
+    "generation": 1
+  },
+  "run_id": "reviewed-pilot-1"
+}

@@ -1,0 +1,52 @@
+{
+  "schema_version": 2,
+  "ticket": {
+    "acceptance_criteria": [
+      "request logs include trace identifiers"
+    ],
+    "current_state": "missing correlation",
+    "delivery_requirements": [
+      "open a reviewable PR"
+    ],
+    "dependencies": [],
+    "desired_state": "correlated logs",
+    "evidence": [
+      {
+        "expires_at": "2026-11-07 19:00:00+00:00",
+        "id": "fixture-evidence",
+        "observed_at": "2026-11-07 17:59:00+00:00",
+        "producer": "fixture",
+        "scope": {
+          "environment": "development",
+          "environment_id": "preview-r1-pr1",
+          "generation": 1,
+          "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "service": "demo-service"
+        },
+        "sha256": "9a5b038b289c630fcf58c973340d6f142b1e976b263cce4238c5cbad195b7e7c",
+        "uri": "urn:synthetic:baseline"
+      }
+    ],
+    "implementation_scope": [
+      "request logging"
+    ],
+    "key": "DEMO-1",
+    "objective": "add correlation to the synthetic service",
+    "qa_requirements": [
+      "test a synthetic request"
+    ],
+    "repository": "example/demo-service",
+    "rollback_strategy": "revert the synthetic change",
+    "scope": {
+      "environment": "development",
+      "environment_id": "preview-r1-pr1",
+      "generation": 1,
+      "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "service": "demo-service"
+    },
+    "telemetry_requirements": [
+      "verify correlation"
+    ],
+    "workstream": "demo"
+  }
+}

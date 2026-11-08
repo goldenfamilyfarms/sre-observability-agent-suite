@@ -79,3 +79,15 @@ class EvidenceStore:
             and len(row[1]) <= self.MAX_BYTES
             and hashlib.sha256(row[1]).hexdigest() == evidence.sha256
         )
+
+    def read(self, evidence: Evidence, scope: Scope, now: datetime) -> bytes:
+        """Read only bytes matching the complete supplied metadata, scope and digest."""
+        with self._db.transaction(write=False):
+            if not self.verify(evidence, scope, now):
+                raise ValueError("evidence unavailable")
+            row = self._db.execute(
+                "SELECT content FROM evidence_objects WHERE id=?", (evidence.id,)
+            ).fetchone()
+            if row is None or not isinstance(row[0], bytes):
+                raise ValueError("evidence unavailable")
+            return row[0]

@@ -124,6 +124,7 @@ class PostgresDatabase:
     def __init__(self, dsn: str, schema: str) -> None:
         self.connection = _connect(dsn, schema)
         self._lock = _lock_key(schema)
+        self._write: bool | None = None
         try:
             with self.transaction(write=False):
                 if _history(self.connection, migrations()) != len(migrations()):
@@ -138,13 +139,25 @@ class PostgresDatabase:
 
     @contextmanager
     def transaction(self, *, write: bool) -> Iterator[None]:
-        with self.connection.transaction():
-            if write:
-                self.connection.execute("SET TRANSACTION ISOLATION LEVEL READ COMMITTED")
-                self.connection.execute("SELECT pg_advisory_xact_lock(%s)", (self._lock,))
-            else:
-                self.connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
-            yield
+        if self._write is not None:
+            if write and not self._write:
+                raise RuntimeError("cannot write inside a read transaction")
+            with self.connection.transaction():  # Nested repository operation: savepoint.
+                yield
+            return
+        self._write = write
+        try:
+            with self.connection.transaction():
+                if write:
+                    self.connection.execute("SET TRANSACTION ISOLATION LEVEL READ COMMITTED")
+                    self.connection.execute("SELECT pg_advisory_xact_lock(%s)", (self._lock,))
+                else:
+                    self.connection.execute(
+                        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
+                    )
+                yield
+        finally:
+            self._write = None
 
     def close(self) -> None:
         self.connection.close()

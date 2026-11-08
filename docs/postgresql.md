@@ -1,6 +1,6 @@
 # Phase 1, increment 2: PostgreSQL persistence
 
-Package 0.3.0 adds optional PostgreSQL persistence for evidence bytes, findings/graph edges, knowledge versions/events, preview requests/tombstones/events, and scoped checkpoints/idempotent operations. It preserves the v2 environment ID and generation contract and the existing SQLite interface. Phase 1 is still incomplete: authenticated APIs, a delivery outbox, Temporal evaluation, real Claude Code workers and live preview control remain future work.
+Package 0.3.0 adds optional PostgreSQL persistence for evidence bytes, findings/graph edges, knowledge versions/events, preview requests/tombstones/events, and scoped checkpoints/idempotent operations. It preserves the v2 environment ID and generation contract and the existing SQLite interface. Phase 1 is still incomplete: distributed identity/access audit, a delivery outbox, Temporal evaluation, real Claude Code workers and live preview control remain future work.
 
 ## Install and explicit setup
 
@@ -68,6 +68,6 @@ SRE_TEST_POSTGRES_DSN='postgresql://sre_test:synthetic-test-only@127.0.0.1:55432
 docker stop sre-suite-test-postgres
 ```
 
-The integration suite fails if the driver, database or explicit DSN is missing; it never silently skips. Each test creates a unique `sre_test_` schema and drops only that schema afterward. CI supplies disposable PostgreSQL 16/Python 3.11 and PostgreSQL 17/Python 3.14 services. The ordinary `python -m unittest discover -v` remains the offline 70-test SQLite/core suite.
+The integration suite fails if the driver, database or explicit DSN is missing; it never silently skips. Each test creates a unique `sre_test_` schema and drops only that schema afterward. CI supplies disposable PostgreSQL 16/Python 3.11 and PostgreSQL 17/Python 3.14 services. The ordinary `python -m unittest discover -v` remains offline. The later [authenticated API increment](authenticated-api.md) expands both suites and uses nested savepoints to share one generation-checked request transaction.
 
 The 21 integration tests cover clean install, upgrade preservation, repeat migration, checksums/unknown history, unmanaged schemas, concurrent migration, failed-DDL rollback, SQL scope guards, reopen persistence, evidence tampering, graph semantics, cross-preview/generation checkpoints, simultaneous absent-row inserts and CAS races, consistent snapshots, stale worker completion, failed checkpoint audit writes and subprocess exit during a preview update. A successful database test is not a deployment, production recovery exercise or service certification.

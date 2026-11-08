@@ -1,0 +1,2286 @@
+{
+  "version": "0.1.0-draft",
+  "status": "design inventory; query and assertion adapters not implemented",
+  "checks": [
+    {
+      "id": "TRACES-001",
+      "category": "traces",
+      "title": "HTTP server span present",
+      "applicability": "Requires service capability and data-source mapping for: HTTP server span present. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP server span present",
+      "expected_result": "HTTP server span present satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-002",
+      "category": "traces",
+      "title": "HTTP method attribute",
+      "applicability": "Requires service capability and data-source mapping for: HTTP method attribute. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP method attribute",
+      "expected_result": "HTTP method attribute satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-003",
+      "category": "traces",
+      "title": "HTTP route uses bounded template",
+      "applicability": "Requires service capability and data-source mapping for: HTTP route uses bounded template. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP route uses bounded template",
+      "expected_result": "HTTP route uses bounded template satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-004",
+      "category": "traces",
+      "title": "HTTP response status attribute",
+      "applicability": "Requires service capability and data-source mapping for: HTTP response status attribute. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP response status attribute",
+      "expected_result": "HTTP response status attribute satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-005",
+      "category": "traces",
+      "title": "HTTP server duration",
+      "applicability": "Requires service capability and data-source mapping for: HTTP server duration. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP server duration",
+      "expected_result": "HTTP server duration satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-006",
+      "category": "traces",
+      "title": "HTTP error span status",
+      "applicability": "Requires service capability and data-source mapping for: HTTP error span status. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP error span status",
+      "expected_result": "HTTP error span status satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-007",
+      "category": "traces",
+      "title": "Outbound HTTP client span",
+      "applicability": "Requires service capability and data-source mapping for: Outbound HTTP client span. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Outbound HTTP client span",
+      "expected_result": "Outbound HTTP client span satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-008",
+      "category": "traces",
+      "title": "Outbound HTTP context propagation",
+      "applicability": "Requires service capability and data-source mapping for: Outbound HTTP context propagation. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Outbound HTTP context propagation",
+      "expected_result": "Outbound HTTP context propagation satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-009",
+      "category": "traces",
+      "title": "gRPC server span",
+      "applicability": "Requires service capability and data-source mapping for: gRPC server span. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: gRPC server span",
+      "expected_result": "gRPC server span satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-010",
+      "category": "traces",
+      "title": "gRPC client span",
+      "applicability": "Requires service capability and data-source mapping for: gRPC client span. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: gRPC client span",
+      "expected_result": "gRPC client span satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-011",
+      "category": "traces",
+      "title": "gRPC status mapping",
+      "applicability": "Requires service capability and data-source mapping for: gRPC status mapping. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: gRPC status mapping",
+      "expected_result": "gRPC status mapping satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-012",
+      "category": "traces",
+      "title": "Database client span",
+      "applicability": "Requires service capability and data-source mapping for: Database client span. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Database client span",
+      "expected_result": "Database client span satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-013",
+      "category": "traces",
+      "title": "Database system attribute",
+      "applicability": "Requires service capability and data-source mapping for: Database system attribute. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Database system attribute",
+      "expected_result": "Database system attribute satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-014",
+      "category": "traces",
+      "title": "Database operation attribute",
+      "applicability": "Requires service capability and data-source mapping for: Database operation attribute. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Database operation attribute",
+      "expected_result": "Database operation attribute satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-015",
+      "category": "traces",
+      "title": "Database statement redaction",
+      "applicability": "Requires service capability and data-source mapping for: Database statement redaction. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Database statement redaction",
+      "expected_result": "Database statement redaction satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-016",
+      "category": "traces",
+      "title": "Cache client span",
+      "applicability": "Requires service capability and data-source mapping for: Cache client span. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Cache client span",
+      "expected_result": "Cache client span satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-017",
+      "category": "traces",
+      "title": "Messaging producer span",
+      "applicability": "Requires service capability and data-source mapping for: Messaging producer span. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Messaging producer span",
+      "expected_result": "Messaging producer span satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-018",
+      "category": "traces",
+      "title": "Messaging consumer span",
+      "applicability": "Requires service capability and data-source mapping for: Messaging consumer span. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Messaging consumer span",
+      "expected_result": "Messaging consumer span satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-019",
+      "category": "traces",
+      "title": "Messaging destination attribute",
+      "applicability": "Requires service capability and data-source mapping for: Messaging destination attribute. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Messaging destination attribute",
+      "expected_result": "Messaging destination attribute satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-020",
+      "category": "traces",
+      "title": "Messaging context injection",
+      "applicability": "Requires service capability and data-source mapping for: Messaging context injection. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Messaging context injection",
+      "expected_result": "Messaging context injection satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-021",
+      "category": "traces",
+      "title": "Messaging context extraction",
+      "applicability": "Requires service capability and data-source mapping for: Messaging context extraction. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Messaging context extraction",
+      "expected_result": "Messaging context extraction satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-022",
+      "category": "traces",
+      "title": "Batch messaging span links",
+      "applicability": "Requires service capability and data-source mapping for: Batch messaging span links. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Batch messaging span links",
+      "expected_result": "Batch messaging span links satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-023",
+      "category": "traces",
+      "title": "Asynchronous context propagation",
+      "applicability": "Requires service capability and data-source mapping for: Asynchronous context propagation. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Asynchronous context propagation",
+      "expected_result": "Asynchronous context propagation satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-024",
+      "category": "traces",
+      "title": "Parent child continuity",
+      "applicability": "Requires service capability and data-source mapping for: Parent child continuity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Parent child continuity",
+      "expected_result": "Parent child continuity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-025",
+      "category": "traces",
+      "title": "Cross service trace continuity",
+      "applicability": "Requires service capability and data-source mapping for: Cross service trace continuity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Cross service trace continuity",
+      "expected_result": "Cross service trace continuity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-026",
+      "category": "traces",
+      "title": "Root span uniqueness",
+      "applicability": "Requires service capability and data-source mapping for: Root span uniqueness. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Root span uniqueness",
+      "expected_result": "Root span uniqueness satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-027",
+      "category": "traces",
+      "title": "Span ID validity",
+      "applicability": "Requires service capability and data-source mapping for: Span ID validity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Span ID validity",
+      "expected_result": "Span ID validity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-028",
+      "category": "traces",
+      "title": "Trace ID validity",
+      "applicability": "Requires service capability and data-source mapping for: Trace ID validity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Trace ID validity",
+      "expected_result": "Trace ID validity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-029",
+      "category": "traces",
+      "title": "Service name resource",
+      "applicability": "Requires service capability and data-source mapping for: Service name resource. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Service name resource",
+      "expected_result": "Service name resource satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-030",
+      "category": "traces",
+      "title": "Service version resource",
+      "applicability": "Requires service capability and data-source mapping for: Service version resource. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Service version resource",
+      "expected_result": "Service version resource satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-031",
+      "category": "traces",
+      "title": "Environment resource",
+      "applicability": "Requires service capability and data-source mapping for: Environment resource. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Environment resource",
+      "expected_result": "Environment resource satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-032",
+      "category": "traces",
+      "title": "Exception event structure",
+      "applicability": "Requires service capability and data-source mapping for: Exception event structure. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Exception event structure",
+      "expected_result": "Exception event structure satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-033",
+      "category": "traces",
+      "title": "Retry attempt visibility",
+      "applicability": "Requires service capability and data-source mapping for: Retry attempt visibility. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Retry attempt visibility",
+      "expected_result": "Retry attempt visibility satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-034",
+      "category": "traces",
+      "title": "Timeout span status",
+      "applicability": "Requires service capability and data-source mapping for: Timeout span status. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Timeout span status",
+      "expected_result": "Timeout span status satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-035",
+      "category": "traces",
+      "title": "Cancellation visibility",
+      "applicability": "Requires service capability and data-source mapping for: Cancellation visibility. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Cancellation visibility",
+      "expected_result": "Cancellation visibility satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-036",
+      "category": "traces",
+      "title": "Sampling policy behavior",
+      "applicability": "Requires service capability and data-source mapping for: Sampling policy behavior. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Sampling policy behavior",
+      "expected_result": "Sampling policy behavior satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-037",
+      "category": "traces",
+      "title": "Sensitive attribute exclusion",
+      "applicability": "Requires service capability and data-source mapping for: Sensitive attribute exclusion. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Sensitive attribute exclusion",
+      "expected_result": "Sensitive attribute exclusion satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-038",
+      "category": "traces",
+      "title": "Span timing consistency",
+      "applicability": "Requires service capability and data-source mapping for: Span timing consistency. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Span timing consistency",
+      "expected_result": "Span timing consistency satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-039",
+      "category": "traces",
+      "title": "Exporter delivery health",
+      "applicability": "Requires service capability and data-source mapping for: Exporter delivery health. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Exporter delivery health",
+      "expected_result": "Exporter delivery health satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "TRACES-040",
+      "category": "traces",
+      "title": "Synthetic journey completeness",
+      "applicability": "Requires service capability and data-source mapping for: Synthetic journey completeness. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Synthetic journey completeness",
+      "expected_result": "Synthetic journey completeness satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-001",
+      "category": "logs",
+      "title": "Structured record parsing",
+      "applicability": "Requires service capability and data-source mapping for: Structured record parsing. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Structured record parsing",
+      "expected_result": "Structured record parsing satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-002",
+      "category": "logs",
+      "title": "Timestamp field validity",
+      "applicability": "Requires service capability and data-source mapping for: Timestamp field validity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Timestamp field validity",
+      "expected_result": "Timestamp field validity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-003",
+      "category": "logs",
+      "title": "Severity field presence",
+      "applicability": "Requires service capability and data-source mapping for: Severity field presence. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Severity field presence",
+      "expected_result": "Severity field presence satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-004",
+      "category": "logs",
+      "title": "Severity mapping correctness",
+      "applicability": "Requires service capability and data-source mapping for: Severity mapping correctness. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Severity mapping correctness",
+      "expected_result": "Severity mapping correctness satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-005",
+      "category": "logs",
+      "title": "Service name identity",
+      "applicability": "Requires service capability and data-source mapping for: Service name identity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Service name identity",
+      "expected_result": "Service name identity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-006",
+      "category": "logs",
+      "title": "Service version identity",
+      "applicability": "Requires service capability and data-source mapping for: Service version identity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Service version identity",
+      "expected_result": "Service version identity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-007",
+      "category": "logs",
+      "title": "Environment identity",
+      "applicability": "Requires service capability and data-source mapping for: Environment identity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Environment identity",
+      "expected_result": "Environment identity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-008",
+      "category": "logs",
+      "title": "Trace ID correlation",
+      "applicability": "Requires service capability and data-source mapping for: Trace ID correlation. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Trace ID correlation",
+      "expected_result": "Trace ID correlation satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-009",
+      "category": "logs",
+      "title": "Span ID correlation",
+      "applicability": "Requires service capability and data-source mapping for: Span ID correlation. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Span ID correlation",
+      "expected_result": "Span ID correlation satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-010",
+      "category": "logs",
+      "title": "Active trace context validity",
+      "applicability": "Requires service capability and data-source mapping for: Active trace context validity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Active trace context validity",
+      "expected_result": "Active trace context validity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-011",
+      "category": "logs",
+      "title": "HTTP request context",
+      "applicability": "Requires service capability and data-source mapping for: HTTP request context. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP request context",
+      "expected_result": "HTTP request context satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-012",
+      "category": "logs",
+      "title": "HTTP response context",
+      "applicability": "Requires service capability and data-source mapping for: HTTP response context. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP response context",
+      "expected_result": "HTTP response context satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-013",
+      "category": "logs",
+      "title": "Bounded route field",
+      "applicability": "Requires service capability and data-source mapping for: Bounded route field. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Bounded route field",
+      "expected_result": "Bounded route field satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-014",
+      "category": "logs",
+      "title": "Request correlation continuity",
+      "applicability": "Requires service capability and data-source mapping for: Request correlation continuity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Request correlation continuity",
+      "expected_result": "Request correlation continuity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-015",
+      "category": "logs",
+      "title": "gRPC operation context",
+      "applicability": "Requires service capability and data-source mapping for: gRPC operation context. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: gRPC operation context",
+      "expected_result": "gRPC operation context satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-016",
+      "category": "logs",
+      "title": "Messaging publish context",
+      "applicability": "Requires service capability and data-source mapping for: Messaging publish context. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Messaging publish context",
+      "expected_result": "Messaging publish context satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-017",
+      "category": "logs",
+      "title": "Messaging consume context",
+      "applicability": "Requires service capability and data-source mapping for: Messaging consume context. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Messaging consume context",
+      "expected_result": "Messaging consume context satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-018",
+      "category": "logs",
+      "title": "Message correlation continuity",
+      "applicability": "Requires service capability and data-source mapping for: Message correlation continuity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Message correlation continuity",
+      "expected_result": "Message correlation continuity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-019",
+      "category": "logs",
+      "title": "Batch message context",
+      "applicability": "Requires service capability and data-source mapping for: Batch message context. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Batch message context",
+      "expected_result": "Batch message context satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-020",
+      "category": "logs",
+      "title": "Exception type field",
+      "applicability": "Requires service capability and data-source mapping for: Exception type field. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Exception type field",
+      "expected_result": "Exception type field satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-021",
+      "category": "logs",
+      "title": "Exception stack field",
+      "applicability": "Requires service capability and data-source mapping for: Exception stack field. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Exception stack field",
+      "expected_result": "Exception stack field satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-022",
+      "category": "logs",
+      "title": "Exception message redaction",
+      "applicability": "Requires service capability and data-source mapping for: Exception message redaction. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Exception message redaction",
+      "expected_result": "Exception message redaction satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-023",
+      "category": "logs",
+      "title": "Retry attempt field",
+      "applicability": "Requires service capability and data-source mapping for: Retry attempt field. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Retry attempt field",
+      "expected_result": "Retry attempt field satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-024",
+      "category": "logs",
+      "title": "Timeout event record",
+      "applicability": "Requires service capability and data-source mapping for: Timeout event record. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Timeout event record",
+      "expected_result": "Timeout event record satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-025",
+      "category": "logs",
+      "title": "Cancellation event record",
+      "applicability": "Requires service capability and data-source mapping for: Cancellation event record. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Cancellation event record",
+      "expected_result": "Cancellation event record satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-026",
+      "category": "logs",
+      "title": "Authentication secret exclusion",
+      "applicability": "Requires service capability and data-source mapping for: Authentication secret exclusion. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Authentication secret exclusion",
+      "expected_result": "Authentication secret exclusion satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-027",
+      "category": "logs",
+      "title": "Personal data redaction",
+      "applicability": "Requires service capability and data-source mapping for: Personal data redaction. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Personal data redaction",
+      "expected_result": "Personal data redaction satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-028",
+      "category": "logs",
+      "title": "Request body redaction",
+      "applicability": "Requires service capability and data-source mapping for: Request body redaction. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Request body redaction",
+      "expected_result": "Request body redaction satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-029",
+      "category": "logs",
+      "title": "Database credential exclusion",
+      "applicability": "Requires service capability and data-source mapping for: Database credential exclusion. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Database credential exclusion",
+      "expected_result": "Database credential exclusion satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-030",
+      "category": "logs",
+      "title": "Log injection resistance",
+      "applicability": "Requires service capability and data-source mapping for: Log injection resistance. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Log injection resistance",
+      "expected_result": "Log injection resistance satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-031",
+      "category": "logs",
+      "title": "Multiline event integrity",
+      "applicability": "Requires service capability and data-source mapping for: Multiline event integrity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Multiline event integrity",
+      "expected_result": "Multiline event integrity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-032",
+      "category": "logs",
+      "title": "Unicode record integrity",
+      "applicability": "Requires service capability and data-source mapping for: Unicode record integrity. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Unicode record integrity",
+      "expected_result": "Unicode record integrity satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-033",
+      "category": "logs",
+      "title": "Duplicate event control",
+      "applicability": "Requires service capability and data-source mapping for: Duplicate event control. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Duplicate event control",
+      "expected_result": "Duplicate event control satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-034",
+      "category": "logs",
+      "title": "Ingestion latency bound",
+      "applicability": "Requires service capability and data-source mapping for: Ingestion latency bound. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Ingestion latency bound",
+      "expected_result": "Ingestion latency bound satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-035",
+      "category": "logs",
+      "title": "Ingestion loss detection",
+      "applicability": "Requires service capability and data-source mapping for: Ingestion loss detection. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Ingestion loss detection",
+      "expected_result": "Ingestion loss detection satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-036",
+      "category": "logs",
+      "title": "Retention policy evidence",
+      "applicability": "Requires service capability and data-source mapping for: Retention policy evidence. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Retention policy evidence",
+      "expected_result": "Retention policy evidence satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-037",
+      "category": "logs",
+      "title": "Authorized datasource scope",
+      "applicability": "Requires service capability and data-source mapping for: Authorized datasource scope. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Authorized datasource scope",
+      "expected_result": "Authorized datasource scope satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-038",
+      "category": "logs",
+      "title": "Low cardinality labels",
+      "applicability": "Requires service capability and data-source mapping for: Low cardinality labels. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Low cardinality labels",
+      "expected_result": "Low cardinality labels satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-039",
+      "category": "logs",
+      "title": "Synthetic journey log coverage",
+      "applicability": "Requires service capability and data-source mapping for: Synthetic journey log coverage. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Synthetic journey log coverage",
+      "expected_result": "Synthetic journey log coverage satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "LOGS-040",
+      "category": "logs",
+      "title": "Severity based alert readiness",
+      "applicability": "Requires service capability and data-source mapping for: Severity based alert readiness. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Severity based alert readiness",
+      "expected_result": "Severity based alert readiness satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-001",
+      "category": "promql",
+      "title": "HTTP request rate",
+      "applicability": "Requires service capability and data-source mapping for: HTTP request rate. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP request rate",
+      "expected_result": "HTTP request rate satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-002",
+      "category": "promql",
+      "title": "HTTP error rate",
+      "applicability": "Requires service capability and data-source mapping for: HTTP error rate. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP error rate",
+      "expected_result": "HTTP error rate satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-003",
+      "category": "promql",
+      "title": "HTTP latency histogram",
+      "applicability": "Requires service capability and data-source mapping for: HTTP latency histogram. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: HTTP latency histogram",
+      "expected_result": "HTTP latency histogram satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-004",
+      "category": "promql",
+      "title": "Latency quantile calculation",
+      "applicability": "Requires service capability and data-source mapping for: Latency quantile calculation. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Latency quantile calculation",
+      "expected_result": "Latency quantile calculation satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-005",
+      "category": "promql",
+      "title": "Route label cardinality",
+      "applicability": "Requires service capability and data-source mapping for: Route label cardinality. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Route label cardinality",
+      "expected_result": "Route label cardinality satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-006",
+      "category": "promql",
+      "title": "Service identity labels",
+      "applicability": "Requires service capability and data-source mapping for: Service identity labels. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Service identity labels",
+      "expected_result": "Service identity labels satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-007",
+      "category": "promql",
+      "title": "Environment labels",
+      "applicability": "Requires service capability and data-source mapping for: Environment labels. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Environment labels",
+      "expected_result": "Environment labels satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-008",
+      "category": "promql",
+      "title": "Artifact attribution evidence",
+      "applicability": "Requires service capability and data-source mapping for: Artifact attribution evidence. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Artifact attribution evidence",
+      "expected_result": "Artifact attribution evidence satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-009",
+      "category": "promql",
+      "title": "Scrape target availability",
+      "applicability": "Requires service capability and data-source mapping for: Scrape target availability. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Scrape target availability",
+      "expected_result": "Scrape target availability satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-010",
+      "category": "promql",
+      "title": "Scrape sample freshness",
+      "applicability": "Requires service capability and data-source mapping for: Scrape sample freshness. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Scrape sample freshness",
+      "expected_result": "Scrape sample freshness satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-011",
+      "category": "promql",
+      "title": "Scrape duration budget",
+      "applicability": "Requires service capability and data-source mapping for: Scrape duration budget. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Scrape duration budget",
+      "expected_result": "Scrape duration budget satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-012",
+      "category": "promql",
+      "title": "Scrape sample limit headroom",
+      "applicability": "Requires service capability and data-source mapping for: Scrape sample limit headroom. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Scrape sample limit headroom",
+      "expected_result": "Scrape sample limit headroom satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-013",
+      "category": "promql",
+      "title": "Counter monotonicity and resets",
+      "applicability": "Requires service capability and data-source mapping for: Counter monotonicity and resets. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Counter monotonicity and resets",
+      "expected_result": "Counter monotonicity and resets satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-014",
+      "category": "promql",
+      "title": "Histogram bucket coverage",
+      "applicability": "Requires service capability and data-source mapping for: Histogram bucket coverage. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Histogram bucket coverage",
+      "expected_result": "Histogram bucket coverage satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-015",
+      "category": "promql",
+      "title": "Histogram unit consistency",
+      "applicability": "Requires service capability and data-source mapping for: Histogram unit consistency. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Histogram unit consistency",
+      "expected_result": "Histogram unit consistency satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-016",
+      "category": "promql",
+      "title": "JVM heap utilization",
+      "applicability": "Requires service capability and data-source mapping for: JVM heap utilization. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: JVM heap utilization",
+      "expected_result": "JVM heap utilization satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-017",
+      "category": "promql",
+      "title": "JVM garbage collection duration",
+      "applicability": "Requires service capability and data-source mapping for: JVM garbage collection duration. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: JVM garbage collection duration",
+      "expected_result": "JVM garbage collection duration satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-018",
+      "category": "promql",
+      "title": "JVM thread count",
+      "applicability": "Requires service capability and data-source mapping for: JVM thread count. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: JVM thread count",
+      "expected_result": "JVM thread count satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-019",
+      "category": "promql",
+      "title": "JVM class loading",
+      "applicability": "Requires service capability and data-source mapping for: JVM class loading. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: JVM class loading",
+      "expected_result": "JVM class loading satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-020",
+      "category": "promql",
+      "title": "Process CPU usage",
+      "applicability": "Requires service capability and data-source mapping for: Process CPU usage. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Process CPU usage",
+      "expected_result": "Process CPU usage satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-021",
+      "category": "promql",
+      "title": "Process resident memory",
+      "applicability": "Requires service capability and data-source mapping for: Process resident memory. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Process resident memory",
+      "expected_result": "Process resident memory satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-022",
+      "category": "promql",
+      "title": "Process uptime",
+      "applicability": "Requires service capability and data-source mapping for: Process uptime. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Process uptime",
+      "expected_result": "Process uptime satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-023",
+      "category": "promql",
+      "title": "Process file descriptors",
+      "applicability": "Requires service capability and data-source mapping for: Process file descriptors. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Process file descriptors",
+      "expected_result": "Process file descriptors satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-024",
+      "category": "promql",
+      "title": "Messaging publish rate",
+      "applicability": "Requires service capability and data-source mapping for: Messaging publish rate. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Messaging publish rate",
+      "expected_result": "Messaging publish rate satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-025",
+      "category": "promql",
+      "title": "Messaging consume rate",
+      "applicability": "Requires service capability and data-source mapping for: Messaging consume rate. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Messaging consume rate",
+      "expected_result": "Messaging consume rate satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-026",
+      "category": "promql",
+      "title": "Messaging error rate",
+      "applicability": "Requires service capability and data-source mapping for: Messaging error rate. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Messaging error rate",
+      "expected_result": "Messaging error rate satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-027",
+      "category": "promql",
+      "title": "Consumer backlog",
+      "applicability": "Requires service capability and data-source mapping for: Consumer backlog. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Consumer backlog",
+      "expected_result": "Consumer backlog satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-028",
+      "category": "promql",
+      "title": "Message processing latency",
+      "applicability": "Requires service capability and data-source mapping for: Message processing latency. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Message processing latency",
+      "expected_result": "Message processing latency satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-029",
+      "category": "promql",
+      "title": "Database operation rate",
+      "applicability": "Requires service capability and data-source mapping for: Database operation rate. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Database operation rate",
+      "expected_result": "Database operation rate satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-030",
+      "category": "promql",
+      "title": "Database error rate",
+      "applicability": "Requires service capability and data-source mapping for: Database error rate. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Database error rate",
+      "expected_result": "Database error rate satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-031",
+      "category": "promql",
+      "title": "Database latency",
+      "applicability": "Requires service capability and data-source mapping for: Database latency. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Database latency",
+      "expected_result": "Database latency satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-032",
+      "category": "promql",
+      "title": "Connection pool saturation",
+      "applicability": "Requires service capability and data-source mapping for: Connection pool saturation. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Connection pool saturation",
+      "expected_result": "Connection pool saturation satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-033",
+      "category": "promql",
+      "title": "Cache hit ratio",
+      "applicability": "Requires service capability and data-source mapping for: Cache hit ratio. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Cache hit ratio",
+      "expected_result": "Cache hit ratio satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-034",
+      "category": "promql",
+      "title": "Exporter queue pressure",
+      "applicability": "Requires service capability and data-source mapping for: Exporter queue pressure. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Exporter queue pressure",
+      "expected_result": "Exporter queue pressure satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-035",
+      "category": "promql",
+      "title": "Telemetry dropped sample rate",
+      "applicability": "Requires service capability and data-source mapping for: Telemetry dropped sample rate. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Telemetry dropped sample rate",
+      "expected_result": "Telemetry dropped sample rate satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-036",
+      "category": "promql",
+      "title": "Series cardinality budget",
+      "applicability": "Requires service capability and data-source mapping for: Series cardinality budget. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Series cardinality budget",
+      "expected_result": "Series cardinality budget satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-037",
+      "category": "promql",
+      "title": "Missing series handling",
+      "applicability": "Requires service capability and data-source mapping for: Missing series handling. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Missing series handling",
+      "expected_result": "Missing series handling satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-038",
+      "category": "promql",
+      "title": "Availability SLI readiness",
+      "applicability": "Requires service capability and data-source mapping for: Availability SLI readiness. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Availability SLI readiness",
+      "expected_result": "Availability SLI readiness satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-039",
+      "category": "promql",
+      "title": "Latency SLI readiness",
+      "applicability": "Requires service capability and data-source mapping for: Latency SLI readiness. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Latency SLI readiness",
+      "expected_result": "Latency SLI readiness satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    },
+    {
+      "id": "PROMQL-040",
+      "category": "promql",
+      "title": "Error budget burn calculation",
+      "applicability": "Requires service capability and data-source mapping for: Error budget burn calculation. Assessor must record evidence-backed applicability before execution.",
+      "fixture": "Isolated synthetic scenario exercising: Error budget burn calculation",
+      "expected_result": "Error budget burn calculation satisfies the service-specific approved threshold or structural predicate.",
+      "query_template": null,
+      "assertion": null,
+      "timeout_seconds": 60,
+      "mandatory": true,
+      "severity": "required",
+      "evidence_requirements": [
+        "exact release",
+        "observation window",
+        "query input and response digest",
+        "assertion evaluation or applicability decision"
+      ]
+    }
+  ]
+}

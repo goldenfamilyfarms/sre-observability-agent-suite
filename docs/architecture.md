@@ -2,7 +2,7 @@
 
 ## Control and execution
 
-Claude Code performs engineering reasoning and code changes. An external durable orchestrator owns canonical workflow state, retries, scheduling, dependencies, approval waits, and audit history. Temporal is the preferred candidate, subject to ADR-002's evaluation. Worker conversation history is never canonical workflow state.
+Claude Code performs engineering reasoning and code changes. An external durable orchestrator owns canonical workflow state, retries, scheduling, dependencies, approval waits, and audit history. Temporal is implemented for the bounded pilot in ADR-010; production hosting and remaining ADR-002 operational gates are open. Worker conversation history is never canonical workflow state.
 
 ```mermaid
 flowchart LR
@@ -67,3 +67,7 @@ Dynamic non-production previews are an optional execution target for independent
 ## Platform observability
 
 Future adapters emit execution/ticket/service IDs, attempt counts, state-transition latency, queue age, token/cost budgets and evidence freshness. Trace the orchestrator-to-worker-to-adapter flow; redact credentials, prompt bodies and raw customer telemetry. Alert on stuck workflows, exhausted retries, approval expiry, knowledge conflicts and telemetry pipeline failures. No telemetry exporter is installed by this PR.
+
+## Implemented execution pilot
+
+Phase 1 increment 4 adds `sre_suite.execution`: real Temporal workflows, restricted Claude Code CLI workers, Jira Cloud intake and idempotent result-property writeback. Shared evidence/context remains behind the existing scoped API; full environment ID/generation checks apply before every gate. A private shared filesystem journal retains immutable model results for retry reuse. See [runtime boundaries and setup](execution-runtime.md) and [ADR-010](adr/010-temporal-execution-pilot.md). Model/Jira tests use fixtures; no shipping or production execution is enabled.

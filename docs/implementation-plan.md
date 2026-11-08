@@ -2,7 +2,7 @@
 
 These are proposed backlog items, not real Jira issues. Each phase requires review of its evidence before advancing. No phase grants permission to merge or deploy.
 
-Phase 1 increment 1 is now implemented locally: ENV-1 identity/generation binding, persistent generation guards, scope-bound checkpoints, explicit legacy quarantine, local evidence-byte verification and scoped worker context validation. See [implementation and migration details](phase-1-foundation.md). Increment 2 adds [PostgreSQL persistence and explicit migrations](postgresql.md), with concurrent-write and rollback tests against real databases. Increment 3 adds the [authenticated evidence and scoped context HTTP API](authenticated-api.md), including exact-scope service grants and transactional generation checks. P1-1/P1-2 now have persistence and a pilot HTTP authentication boundary. Distributed identity/revocation, access audit, governed reconciliation, an outbox and MCP remain open, along with Temporal (P1-3) and the real Claude Code worker (P1-4). Phase 1 is not complete.
+Phase 1 increment 1 is now implemented locally: ENV-1 identity/generation binding, persistent generation guards, scope-bound checkpoints, explicit legacy quarantine, local evidence-byte verification and scoped worker context validation. See [implementation and migration details](phase-1-foundation.md). Increment 2 adds [PostgreSQL persistence and explicit migrations](postgresql.md), with concurrent-write and rollback tests against real databases. Increment 3 adds the [authenticated evidence and scoped context HTTP API](authenticated-api.md), including exact-scope service grants and transactional generation checks. P1-1/P1-2 now have persistence and a pilot HTTP authentication boundary. Distributed identity/revocation, access audit, governed reconciliation, an outbox and MCP remain open. Increment 4 implements the Temporal engine (P1-3), restricted real Claude Code adapter (P1-4), and Jira intake/result writeback with environment configuration. Real-engine/CLI-fixture tests cover recovery, cancellation and retry; live Jira/model acceptance and operational hosting remain open. See the [runtime guide](execution-runtime.md). Phase 1 is not complete.
 
 | Phase | Deliverable / proposed work items | Depends on | Acceptance evidence |
 | --- | --- | --- | --- |
@@ -29,6 +29,8 @@ The [GCP preview guide](dynamic-environments.md) and [ADR-006](adr/006-dynamic-p
 | ENV-6 — controlled expansion | ENV-1..5; Phase 4 | Complete create/update/delete pilot, quotas/TTL/rollback evidence and reviewed authorization policy before enabling additional services |
 
 ### Core execution milestone
+
+Increment 4 supplies the engine and adapters below, with synthetic Jira/model fixtures and real Temporal/container tests. The remaining milestone is an authorized live synthetic ticket, operational recovery/upgrade proof and separately authenticated reviewer identities. Jira issue creation, status transitions and automatic PR publication remain Phase 2 work.
 
 Prove one real Claude Code worker executing a synthetic engineering ticket under an external durable orchestrator with persistent shared knowledge. Use a non-production demonstration service and separately authorized resources. Do not expand to all supporting agents first.
 

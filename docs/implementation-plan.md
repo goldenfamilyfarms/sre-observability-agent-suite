@@ -13,6 +13,21 @@ These are proposed backlog items, not real Jira issues. Each phase requires revi
 
 ## Immediate next milestone
 
+### Dynamic-environment workstream
+
+The [GCP preview guide](dynamic-environments.md) and [ADR-006](adr/006-dynamic-preview-environments.md) add a proposed GitHub + Helm + Argo CD + GKE target. These are backlog items, not provisioned environments or real Jira issues:
+
+| Item | Dependency / placement | Acceptance evidence |
+| --- | --- | --- |
+| ENV-1 — instance-scoped contracts and authorization | Phase 1 contracts, before any preview deployment | Preview ID/generation bound to evidence, memory, releases and approvals; cross-preview reuse rejected; persistence migration tested |
+| ENV-2 — shared foundation and namespace controls | ENV-1; authorized Phase 2/3 pilot setup | Non-prod project/cluster, registry, routing, identity, quotas, enforced network policy and isolated data verified for one synthetic service |
+| ENV-3 — gated configuration publisher and Helm ApplicationSet | ENV-2 plus successful CI and exact-release authorization | Correct digest only; stale/failed builds and unauthorized/fork PRs cannot publish; namespaces prepared before workload sync |
+| ENV-4 — independent QA and telemetry integration | ENV-3; Phase 3 | Readiness/smoke tests and targeted telemetry evidence identify the exact preview generation; final certification remains 120-slot accounting |
+| ENV-5 — deletion, expiry and cost controls | Build alongside ENV-2/3; required before pilot acceptance | Close/unlabel/TTL and missed-event recovery delete all owned resources; partial cleanup retries bounded; no shared-resource deletion |
+| ENV-6 — controlled expansion | ENV-1..5; Phase 4 | Complete create/update/delete pilot, quotas/TTL/rollback evidence and reviewed authorization policy before enabling additional services |
+
+### Core execution milestone
+
 Prove one real Claude Code worker executing a synthetic engineering ticket under an external durable orchestrator with persistent shared knowledge. Use a non-production demonstration service and separately authorized resources. Do not expand to all supporting agents first.
 
 1. Confirm runtime host, permitted repositories, private evidence destination and budget.

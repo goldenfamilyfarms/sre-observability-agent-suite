@@ -42,4 +42,6 @@ The largest risks are falsely trusting agent-reported evidence, replaying extern
 
 ## Phase 0 exit
 
+Follow-on design input: supplied notes describe a GitHub + Helm + Argo CD + GKE preview pattern. The [dynamic-environment guide](dynamic-environments.md) records a generic proposed design and its verification work. This is user-supplied context, not verified infrastructure discovery; no actual deployment manifest, cluster, identity or credentials were inspected. Preview instance/generation scope is a known gap in the initial contracts.
+
 Observed repository baseline documented; architecture and ADRs reviewable; contracts and a synthetic slice runnable; initial tests passing; feature PR open. Phase 0 does **not** establish production readiness, service certification, or permission to merge/deploy.

@@ -60,6 +60,10 @@ Target certification path: Not Assessed → Assessed → Instrumentation In Prog
 - Enforce policy again immediately before the external write. Record intent and result with an idempotency key; recover by reconciling remote state after uncertain outcomes. Never claim exactly-once delivery from at-least-once activity execution.
 - Limit worker attempts to three and enforce execution timeouts. Remediation has a separately bounded budget. Local request bounds are contracts; an adapter must enforce them.
 
+## Dynamic preview environments
+
+Dynamic non-production previews are an optional execution target for independent QA and telemetry verification. The [preview-environment design](dynamic-environments.md) proposes GitHub-triggered, Helm-based deployments through Argo CD into isolated GKE namespaces, gated by successful builds and exact-release authorization. The orchestrator owns lifecycle and external cleanup; Argo owns Kubernetes convergence. Before implementation, extend scope/evidence/approval contracts with preview instance and generation identity so separate environments cannot share authorization or certification accidentally. See [ADR-006](adr/006-dynamic-preview-environments.md).
+
 ## Platform observability
 
 Future adapters emit execution/ticket/service IDs, attempt counts, state-transition latency, queue age, token/cost budgets and evidence freshness. Trace the orchestrator-to-worker-to-adapter flow; redact credentials, prompt bodies and raw customer telemetry. Alert on stuck workflows, exhausted retries, approval expiry, knowledge conflicts and telemetry pipeline failures. No telemetry exporter is installed by this PR.

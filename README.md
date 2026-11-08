@@ -42,6 +42,7 @@ python -m ruff format --check .
 - [Architecture and trust boundaries](docs/architecture.md)
 - [Architecture decisions](docs/adr/README.md)
 - [Phased plan and acceptance gates](docs/implementation-plan.md)
+- [Dynamic GCP preview environments: GitHub, Helm and Argo CD](docs/dynamic-environments.md)
 - [Agent contracts](docs/agent-contracts.md)
 - [Certification design](docs/certification.md)
 - [Validation and limitations](docs/validation.md)

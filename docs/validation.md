@@ -27,3 +27,5 @@ CI runs the same checks on Python 3.11 and 3.14 and exercises the installed pack
 ## Limits
 
 These are local unit and reference-adapter tests. A database reopen models loss of process-local state; it does not prove distributed recovery or a real process kill during I/O. Test gates and ready certification definitions are synthetic. No live Claude Code, Temporal, Jira, telemetry, CI shipping, cloud or production system was exercised. Evidence content hashes and human identity were not authenticated by these adapters. No service is certified or deployed by this validation.
+
+The dynamic-environment addition is documentation only. Its Argo CD/GKE behavior references were checked against the linked official documentation; repository-relative links and whitespace were checked locally. The illustrative ApplicationSet has not been rendered with a real Helm chart, validated against an installed Argo CRD, applied to GKE, or tested for isolation/cleanup. ENV-1 through ENV-6 define the implementation and integration evidence still required.

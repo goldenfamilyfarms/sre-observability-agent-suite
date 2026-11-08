@@ -14,6 +14,7 @@ from ..serialization import scope_from_dict
 from .claude import ClaudeCodeWorker
 from .config import Settings
 from .evidence_client import EvidenceClient
+from .github import GitHubClient
 from .jira import JiraClient
 from .journal import Journal
 from .wire import canonical, digest, ticket_from_wire, ticket_json
@@ -39,6 +40,7 @@ class ExecutionRuntime:
         settings: Settings,
         *,
         jira: JiraClient | None = None,
+        github: GitHubClient | None = None,
         evidence: EvidenceClient | None = None,
         worker: ClaudeCodeWorker | None = None,
         tests: ContainerTests | None = None,
@@ -46,6 +48,7 @@ class ExecutionRuntime:
     ) -> None:
         self.settings = settings
         self.jira = jira or JiraClient(settings)
+        self.github = github or GitHubClient(settings)
         self.evidence = evidence or EvidenceClient(settings.evidence_url, settings.evidence_token)
         self.worker = worker or ClaudeCodeWorker(settings)
         self.tests = tests or ContainerTests(settings)
@@ -65,6 +68,11 @@ class ExecutionRuntime:
                 "model": settings.claude_model,
                 "timeout": settings.timeout,
                 "budget": settings.budget_usd,
+                "publication_version": 1,
+                "github_prs": settings.github_prs,
+                "github_base": settings.github_base,
+                "jira_writes": settings.jira_writes,
+                "jira_transitions": [asdict(rule) for rule in settings.jira_transitions],
             }
         )
 
@@ -93,6 +101,21 @@ class ExecutionRuntime:
         manifest = self.journal.compute(key + ":manifest", spec, load, heartbeat)
         reference = {"key": key, "manifest": digest(manifest)}
         self._guard(reference, heartbeat)
+        if self.settings.jira_transitions:
+
+            def guard() -> None:
+                self._guard(reference, heartbeat)
+
+            with self.journal.locked(key + ":publication", heartbeat):
+                self.jira.transition(
+                    spec["ticket_key"],
+                    key,
+                    reference["manifest"],
+                    digest(spec["scope"]),
+                    "in_progress",
+                    guard,
+                    heartbeat,
+                )
         return reference
 
     def _guard(self, reference: dict[str, Any], heartbeat: Callable[[], None]) -> dict[str, Any]:
@@ -112,10 +135,14 @@ class ExecutionRuntime:
         return manifest
 
     def _results(
-        self, reference: dict[str, Any], results: list[dict[str, Any]]
+        self,
+        reference: dict[str, Any],
+        results: list[dict[str, Any]],
+        heartbeat: Callable[[], None] = lambda: None,
     ) -> list[dict[str, Any]]:
         loaded = []
         for index, result in enumerate(results):
+            heartbeat()
             if index >= len(STAGES) or result["role"] != STAGES[index]:
                 raise ValueError("stage order mismatch")
             key = reference["key"] + ":" + result["role"]
@@ -141,7 +168,7 @@ class ExecutionRuntime:
     ) -> dict[str, Any]:
         reference, role, results = arguments["reference"], arguments["role"], arguments["results"]
         manifest = self._guard(reference, heartbeat)
-        prior = self._results(reference, results)
+        prior = self._results(reference, results, heartbeat)
         if (
             len(prior) >= len(STAGES)
             or role != STAGES[len(prior)]
@@ -208,11 +235,42 @@ class ExecutionRuntime:
     def finish(
         self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
+        with self.journal.locked(arguments["reference"]["key"] + ":publication", heartbeat):
+            return self._finish(arguments, heartbeat)
+
+    def _finish(self, arguments: dict[str, Any], heartbeat: Callable[[], None]) -> dict[str, Any]:
         reference, results = arguments["reference"], arguments["results"]
         manifest = self._guard(reference, heartbeat)
-        loaded = self._results(reference, results)
+        loaded = self._results(reference, results, heartbeat)
         ready = len(loaded) == 4 and all(r["verdict"] == "passed" for r in loaded)
         ticket = ticket_from_wire(manifest["ticket"])
+
+        def guard() -> None:
+            self._guard(reference, heartbeat)
+            self._results(reference, results, heartbeat)
+            if pull_request is not None:
+                self.github.verify(pull_request, heartbeat)
+
+        pull_request: dict[str, Any] | None = None
+        if ready and self.settings.github_prs:
+            pull_request = self.github.publish(
+                reference["key"],
+                reference["manifest"],
+                results[0]["artifact"],
+                ticket.scope,
+                loaded[0],
+                guard,
+                heartbeat,
+            )
+        transitioned = self.jira.transition(
+            ticket.key,
+            reference["key"],
+            reference["manifest"],
+            digest(asdict(ticket.scope)),
+            "in_review" if ready else "blocked",
+            guard,
+            heartbeat,
+        )
         report = {
             "schema_version": 2,
             "execution_id": reference["key"],
@@ -224,17 +282,22 @@ class ExecutionRuntime:
             "patch_sha256": hashlib.sha256(loaded[0].get("patch", "").encode()).hexdigest()
             if loaded
             else None,
+            "pull_request": pull_request,
+            "jira_transitioned": transitioned,
             "merged": False,
             "deployed": False,
         }
         # Normalize datetimes before idempotent remote comparison.
         report = json.loads(canonical(report))
-        reported = self.jira.publish(ticket.key, reference["key"], report)
+        reported = self.jira.publish(ticket.key, reference["key"], report, guard)
+        guard()
         self.journal.compute(reference["key"] + ":report", report, lambda: report, heartbeat)
         return {
             "execution_id": reference["key"],
             "outcome": report["outcome"],
             "jira_reported": reported,
+            "jira_transitioned": transitioned,
+            "pull_request": pull_request,
             "manifest": reference["manifest"],
             "patch_artifact": results[0]["artifact"] if results else None,
         }

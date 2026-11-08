@@ -12,3 +12,4 @@
 | [008](008-postgresql-persistence.md) | Shared guards, explicit PostgreSQL migrations and serialized pilot writes | Accepted for Phase 1 persistence pilot |
 | [009](009-authenticated-scoped-api.md) | Authenticated service grants and transactional scoped evidence/context API | Accepted for Phase 1 preview pilot |
 | [010](010-temporal-execution-pilot.md) | Temporal workflow, restricted Claude Code and scoped Jira execution | Accepted for Phase 1 pilot; live-account acceptance pending |
+| [011](011-draft-pr-and-jira-transitions.md) | Guarded draft PR publication and nonterminal Jira transitions | Accepted for execution pilot; live acceptance pending |

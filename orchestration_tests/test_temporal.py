@@ -24,6 +24,7 @@ from sre_suite.execution.temporal_activities import Activities
 from sre_suite.execution.temporal_workflow import TicketExecution
 from sre_suite.execution.workspace import ContainerTests
 from tests.execution_fixture import Fixture
+from tests.publication_fixture import publication_runtime
 
 
 class TemporalTests(unittest.IsolatedAsyncioTestCase):
@@ -57,10 +58,12 @@ class TemporalTests(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_end_to_end_real_engine_retry_lost_write_and_history_replay(self):
-        self.fixture.jira_http.lose_response = True
-        self.fixture.runtime.tests = ContainerTests(
-            replace(self.fixture.settings, test_image=TEST_IMAGE)
-        )
+        runtime, github, jira, _ = publication_runtime(self.fixture)
+        github.lose_once = "/pulls"
+        jira.lose_transition = True
+        jira.lose_response = True
+        self.activities = Activities(runtime)
+        runtime.tests = ContainerTests(replace(self.fixture.settings, test_image=TEST_IMAGE))
         identity = execution_key(self.fixture.spec)
         async with self.worker():
             handle = await self.environment.client.start_workflow(
@@ -73,7 +76,10 @@ class TemporalTests(unittest.IsolatedAsyncioTestCase):
             report = await asyncio.wait_for(handle.result(), timeout=40)
             self.assertEqual(report["outcome"], "ready_for_review")
             self.assertTrue(report["jira_reported"])
-            self.assertEqual(self.fixture.jira_http.puts, 1)
+            self.assertEqual(jira.puts, 1)
+            self.assertEqual(jira.transitions, ["10", "20"])
+            self.assertEqual(len(github.pulls), 1)
+            self.assertTrue(report["pull_request"]["draft"])
             history = await handle.fetch_history()
         await Replayer(workflows=[TicketExecution]).replay_workflow(history)
         with self.assertRaises(WorkflowAlreadyStartedError):

@@ -4,7 +4,8 @@ import fcntl
 import json
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -18,6 +19,21 @@ class Journal:
         root.mkdir(parents=True, exist_ok=True, mode=0o700)
         if root.is_symlink() or root.stat().st_mode & 0o077:
             raise ValueError("execution journal requires an owner-only directory")
+
+    @contextmanager
+    def locked(self, key: str, heartbeat: Callable[[], None]) -> Iterator[None]:
+        with (self.root / (digest(key) + ".lock")).open("a+b") as lock:
+            while True:
+                try:
+                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except BlockingIOError:
+                    heartbeat()
+                    time.sleep(0.2)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
 
     def compute(
         self,

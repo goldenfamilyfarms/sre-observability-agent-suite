@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sre-observability-agent-suite"
-version = "0.8.0"
+version = "0.9.0"
 description = "Local policy and evidence foundation for an SRE engineering agent suite"
 requires-python = ">=3.11"
 dependencies = []

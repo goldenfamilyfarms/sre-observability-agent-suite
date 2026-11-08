@@ -185,12 +185,15 @@ def setup_pilot(
         content = _read(baseline_path, 1_048_576)
         if hashlib.sha256(content).hexdigest() != manifest.baseline.sha256:
             raise ValueError("baseline digest mismatch")
-        url = https_url(env["SRE_EVIDENCE_API_URL"])
+        ca_file = env.get("SRE_EVIDENCE_CA_FILE") or None
+        url = https_url(env["SRE_EVIDENCE_API_URL"], allow_loopback=bool(ca_file))
         controller_token, worker_token = env["SRE_PILOT_SETUP_TOKEN"], env["SRE_EVIDENCE_API_TOKEN"]
         if token_digest(controller_token) == token_digest(worker_token):
             raise ValueError("controller and worker credentials must be separate")
-        controller = controller or JsonHttp(url, "Bearer " + controller_token)
-        evidence = evidence or EvidenceClient(url, worker_token)
+        controller = controller or JsonHttp(
+            url, "Bearer " + controller_token, local_ca_file=ca_file
+        )
+        evidence = evidence or EvidenceClient(url, worker_token, local_ca_file=ca_file)
         fingerprint = digest({"manifest": manifest.fingerprint(), "evidence_api_url": url})
         with _destination(output, fingerprint) as destination:
             phase = "registration"

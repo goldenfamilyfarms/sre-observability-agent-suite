@@ -127,7 +127,12 @@ class Readiness:
         delegates = {
             "jira": supplied.get("jira") or JsonHttp(settings.jira_url, "Basic " + auth, timeout=5),
             "evidence": supplied.get("evidence")
-            or JsonHttp(settings.evidence_url, "Bearer " + settings.evidence_token, timeout=5),
+            or JsonHttp(
+                settings.evidence_url,
+                "Bearer " + settings.evidence_token,
+                timeout=5,
+                local_ca_file=settings.evidence_ca_file,
+            ),
             "github": supplied.get("github")
             or JsonHttp("https://api.github.com", "Bearer " + settings.github_token, timeout=5),
             "model": supplied.get("model")

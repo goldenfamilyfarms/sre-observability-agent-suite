@@ -11,8 +11,15 @@ from .http import JsonHttp
 
 
 class EvidenceClient:
-    def __init__(self, url: str, token: str, http: JsonHttp | None = None) -> None:
-        self.http = http or JsonHttp(url, "Bearer " + token)
+    def __init__(
+        self,
+        url: str,
+        token: str,
+        http: JsonHttp | None = None,
+        *,
+        local_ca_file: str | None = None,
+    ) -> None:
+        self.http = http or JsonHttp(url, "Bearer " + token, local_ca_file=local_ca_file)
 
     def context(self, scope: Scope, expected_version: int | None = None) -> dict[str, Any]:
         result = self.http.call(

@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse, urlsplit
 
 
-def https_url(value: str) -> str:
+def https_url(value: str, *, allow_loopback: bool = False) -> str:
     parsed = urlparse(value)
     if (
         parsed.scheme != "https"
@@ -17,7 +17,15 @@ def https_url(value: str) -> str:
         or parsed.password
         or parsed.query
         or parsed.fragment
-        or parsed.port not in (None, 443)
+        or (
+            parsed.port not in (None, 443)
+            and not (
+                allow_loopback
+                and parsed.hostname in {"127.0.0.1", "localhost"}
+                and parsed.port is not None
+                and 1024 <= parsed.port <= 65535
+            )
+        )
     ):
         raise ValueError("expected a credential-free HTTPS URL")
     return value.rstrip("/")
@@ -116,6 +124,7 @@ class Settings:
     github_token: str = field(default="", repr=False)
     github_base: str = "main"
     jira_transitions: tuple[TransitionRule, ...] = ()
+    evidence_ca_file: str | None = None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> "Settings":
@@ -181,7 +190,10 @@ class Settings:
             field_name,
             statuses,
             flag(env, "SRE_JIRA_WRITES_ENABLED"),
-            https_url(required(env, "SRE_EVIDENCE_API_URL")),
+            https_url(
+                required(env, "SRE_EVIDENCE_API_URL"),
+                allow_loopback=bool(env.get("SRE_EVIDENCE_CA_FILE")),
+            ),
             required(env, "SRE_EVIDENCE_API_TOKEN"),
             repository,
             repo_path,
@@ -199,6 +211,7 @@ class Settings:
             github_token,
             github_base,
             rules,
+            env.get("SRE_EVIDENCE_CA_FILE") or None,
         )
 
 

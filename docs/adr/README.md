@@ -15,3 +15,4 @@
 | [011](011-draft-pr-and-jira-transitions.md) | Guarded draft PR publication and nonterminal Jira transitions | Accepted for execution pilot; live acceptance pending |
 | [012](012-read-only-preflight.md) | Read-only preflight with explicit unverified capabilities | Accepted for execution pilot |
 | [013](013-pilot-bootstrap.md) | Opt-in controller registration and replayable private pilot setup | Accepted for Phase 1 pilot |
+| [014](014-local-pilot-lifecycle.md) | Explicit loopback services, private credentials and persistent restart | Accepted for local pilot |

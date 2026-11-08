@@ -13,7 +13,7 @@ python -m unittest discover -v
 python -m sre_suite.demo
 ```
 
-The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.7.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
+The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.8.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
 
 For the same static checks as CI:
 
@@ -63,3 +63,5 @@ python -m ruff format --check .
 - [Public repository and security boundaries](SECURITY.md)
 
 The public repository contains only generic design and synthetic fixtures. Runtime evidence, credentials, internal service inventories, and infrastructure configuration belong in separately authorized private systems.
+
+Prepare one authorized preview with the [pilot setup command](docs/pilot-setup.md), then run [preflight](docs/preflight.md) against its generated execution spec. Setup registers metadata and uploads one baseline; it does not start work or provision an environment.

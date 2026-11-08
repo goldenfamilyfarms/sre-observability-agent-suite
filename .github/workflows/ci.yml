@@ -40,6 +40,7 @@ jobs:
           cd "$RUNNER_TEMP"
           python -m sre_suite.demo
           python -m sre_suite.execution.cli preflight --help
+          python -m sre_suite.execution.cli pilot-setup --help
           python -c 'from sre_suite.certification import load_catalog; from sre_suite.api import EvidenceContextApi; assert len(load_catalog().checks) == 120; assert len(EvidenceContextApi.ROUTES) == 3'
 
   postgres:

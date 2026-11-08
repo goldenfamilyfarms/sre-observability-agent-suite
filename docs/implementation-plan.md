@@ -46,3 +46,7 @@ Prove one real Claude Code worker executing a synthetic engineering ticket under
 Each executable Jira ticket follows `JiraExecutionTicket`, includes evidence-backed acceptance criteria and a rollback strategy, and identifies dependencies by immutable planned IDs mapped to Jira keys. Shared-library changes precede dependent services. Validate the DAG and show the complete dry-run before creating issues. Stable idempotency keys bind plan version and task identity; changed input cannot reuse a key silently.
 
 QA planning runs alongside implementation. Ticket checks are targeted; final service certification runs all catalog slots. Stop after bounded retries/remediation attempts and preserve evidence for a human. Supporting intake, architecture discovery, synthetic transaction, pipeline health, standards, remediation, regression and knowledge-steward agents are extension points introduced only when the core flow needs them.
+
+### Pilot input preparation
+
+The [pilot setup command](pilot-setup.md) registers an explicitly authorized preview generation, uploads and verifies a baseline, and writes a private execution spec. It does not provision ENV-2 infrastructure or satisfy live execution acceptance. The operator must still authorize the exact scope, populate the Jira execution contract with returned evidence, run preflight and separately initiate any live pilot.

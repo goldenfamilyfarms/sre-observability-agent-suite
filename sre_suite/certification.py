@@ -159,7 +159,7 @@ def certify(
     # Structural uncertainty always prevents a certificate, even when failures exist.
     verdict = "INCOMPLETE" if reasons else "FAILED" if failed else "PASSED"
     return CertificationReport(
-        "1",
+        "2",
         catalog.version,
         release,
         window_start,

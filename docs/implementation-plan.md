@@ -2,6 +2,8 @@
 
 These are proposed backlog items, not real Jira issues. Each phase requires review of its evidence before advancing. No phase grants permission to merge or deploy.
 
+Phase 1 increment 1 is now implemented locally: ENV-1 identity/generation binding, persistent generation guards, scope-bound checkpoints, explicit legacy quarantine, local evidence-byte verification and scoped worker context validation. See [implementation and migration details](phase-1-foundation.md). P1-1/P1-2 are started at the local reference-adapter layer; PostgreSQL, authenticated API/MCP, Temporal (P1-3) and the real Claude Code worker (P1-4) remain unimplemented. Phase 1 is not complete.
+
 | Phase | Deliverable / proposed work items | Depends on | Acceptance evidence |
 | --- | --- | --- | --- |
 | 0 — assessed foundation | P0-1 baseline; P0-2 architecture/ADRs; P0-3 typed core and local tests | None | Reviewable PR; recorded test/static results; explicit gap assessment |
@@ -19,7 +21,7 @@ The [GCP preview guide](dynamic-environments.md) and [ADR-006](adr/006-dynamic-p
 
 | Item | Dependency / placement | Acceptance evidence |
 | --- | --- | --- |
-| ENV-1 — instance-scoped contracts and authorization | Phase 1 contracts, before any preview deployment | Preview ID/generation bound to evidence, memory, releases and approvals; cross-preview reuse rejected; persistence migration tested |
+| ENV-1 — instance-scoped contracts and authorization | Implemented and tested locally in Phase 1 increment 1; trusted external authorization still required | Preview ID/generation bound to evidence, memory, releases and approvals; cross-preview reuse rejected; legacy quarantine and checkpoint migration tested |
 | ENV-2 — shared foundation and namespace controls | ENV-1; authorized Phase 2/3 pilot setup | Non-prod project/cluster, registry, routing, identity, quotas, enforced network policy and isolated data verified for one synthetic service |
 | ENV-3 — gated configuration publisher and Helm ApplicationSet | ENV-2 plus successful CI and exact-release authorization | Correct digest only; stale/failed builds and unauthorized/fork PRs cannot publish; namespaces prepared before workload sync |
 | ENV-4 — independent QA and telemetry integration | ENV-3; Phase 3 | Readiness/smoke tests and targeted telemetry evidence identify the exact preview generation; final certification remains 120-slot accounting |

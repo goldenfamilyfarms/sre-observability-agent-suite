@@ -17,3 +17,4 @@
 | [013](013-pilot-bootstrap.md) | Opt-in controller registration and replayable private pilot setup | Accepted for Phase 1 pilot |
 | [014](014-local-pilot-lifecycle.md) | Explicit loopback services, private credentials and persistent restart | Accepted for local pilot |
 | [015](015-jira-plan-publication.md) | Scoped plan review, durable creation intent and conservative Jira reconciliation | Accepted for planning pilot; live acceptance pending |
+| [016](016-scoped-telemetry-adapters.md) | Scoped Prometheus, Loki and Tempo observations with explicit evidence capture | Accepted for collection pilot; live acceptance pending |

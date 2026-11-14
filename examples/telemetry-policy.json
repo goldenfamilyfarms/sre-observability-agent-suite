@@ -1,0 +1,57 @@
+{
+  "schema_version": 2,
+  "scope": {
+    "service": "demo-service",
+    "environment": "development",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "environment_id": "preview-r1-pr1",
+    "generation": 1
+  },
+  "profiles": [
+    {
+      "id": "prometheus-up",
+      "backend": "prometheus",
+      "base_url": "https://prometheus.example.invalid",
+      "authorization_env": "SRE_TELEMETRY_PROMETHEUS_AUTH",
+      "tenant_env": null,
+      "query_template": "up${scope}",
+      "scope_labels": {
+        "service": "service_name",
+        "environment": "deployment_environment",
+        "revision": "service_version",
+        "environment_id": "preview_id",
+        "generation": "preview_generation"
+      }
+    },
+    {
+      "id": "loki-logs",
+      "backend": "loki",
+      "base_url": "https://loki.example.invalid",
+      "authorization_env": "SRE_TELEMETRY_LOKI_AUTH",
+      "tenant_env": "SRE_TELEMETRY_LOKI_TENANT",
+      "query_template": "${scope}",
+      "scope_labels": {
+        "service": "service_name",
+        "environment": "deployment_environment",
+        "revision": "service_version",
+        "environment_id": "preview_id",
+        "generation": "preview_generation"
+      }
+    },
+    {
+      "id": "tempo-traces",
+      "backend": "tempo",
+      "base_url": "https://tempo.example.invalid",
+      "authorization_env": "SRE_TELEMETRY_TEMPO_AUTH",
+      "tenant_env": "SRE_TELEMETRY_TEMPO_TENANT",
+      "query_template": "${scope}",
+      "scope_labels": {
+        "service": "service.name",
+        "environment": "deployment.environment.name",
+        "revision": "service.version",
+        "environment_id": "preview.id",
+        "generation": "preview.generation"
+      }
+    }
+  ]
+}

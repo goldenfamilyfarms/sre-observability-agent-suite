@@ -30,6 +30,8 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements-dev.txt ".[postgres,orchestration]"
       - run: python -m unittest discover -v
+      - name: Synthetic telemetry protocols over real loopback TLS
+        run: python -m unittest discover -s telemetry_tests -v
       - run: python -m sre_suite.demo
       - run: python -m mypy sre_suite
       - run: python -m ruff check .
@@ -43,6 +45,7 @@ jobs:
           python -m sre_suite.execution.cli pilot-setup --help
           python -m sre_suite.local_pilot --help
           python -m sre_suite.pilot_demo --help
+          python -m sre_suite.telemetry --help
           python -m sre_suite.jira_planning --help
           python -m sre_suite.jira_planning handoff --help
           python -m sre_suite.local_pilot handoff --help

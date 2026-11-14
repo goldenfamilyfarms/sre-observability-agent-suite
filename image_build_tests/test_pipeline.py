@@ -25,6 +25,9 @@ REGISTRY = "registry@sha256:82f6ff4a7f982960c8aa51617fea3aabc485df6e55cce80d22de
 
 
 class ImagePipelineTests(unittest.TestCase):
+    def certify(self, root, fixture, built, receipt, docker_call, image, cert, key):
+        return False
+
     def test_real_oci_build_registry_attestation_and_reference_container(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -110,7 +113,7 @@ class ImagePipelineTests(unittest.TestCase):
                 "-subj",
                 "/CN=localhost",
                 "-addext",
-                "subjectAltName=DNS:localhost,IP:127.0.0.1",
+                "subjectAltName=DNS:localhost,DNS:host.docker.internal,IP:127.0.0.1",
                 "-keyout",
                 str(key),
                 "-out",
@@ -159,6 +162,7 @@ class ImagePipelineTests(unittest.TestCase):
         f.approve()
         built = f.runtime.build()
         self.assertEqual(built["outcome"], "built")
+        receipt = None
         if not build_only:
             receipt = f.runtime.publish()
             self.assertTrue(receipt["image"].endswith(built["image_digest"]))
@@ -167,6 +171,8 @@ class ImagePipelineTests(unittest.TestCase):
         docker_call("load", "--input", str(f.runtime.archive))
         config_id = "sre-build:" + f.runtime.request.identity
         self.addCleanup(lambda: docker_call("image", "rm", "--force", config_id))
+        if self.certify(root, f, built, receipt, docker_call, config_id, cert, key):
+            return
         container = "sre-reference-" + uuid4().hex[:12]
         env = identity() | {"sre.artifact.digest": built["image_digest"]}
         docker_call(

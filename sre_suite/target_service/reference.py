@@ -376,7 +376,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Nonproduction Python target service")
     parser.add_argument("--bind", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8080)
-    parser.add_argument("--state", type=Path, default=Path("/tmp/sre-target.db"))
+    parser.add_argument(
+        "--state", type=Path, default=Path(os.environ.get("SRE_TARGET_STATE", "/tmp/sre-target.db"))
+    )
     args = parser.parse_args()
     env = dict(os.environ)
     state = State(args.state, resource(env))

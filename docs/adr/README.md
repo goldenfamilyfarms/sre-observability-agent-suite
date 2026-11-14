@@ -31,3 +31,5 @@
 | [027](027-intake-assessment-planning.md) | Pinned source discovery, independent assessment and guarded planning | Accepted for bounded non-production discovery |
 | [028](028-governed-suite-agents.md) | Authenticated agent roles, suite orchestration, shipping and deployment controls | Implemented for bounded v1; live acceptance pending |
 | [029](029-image-build-target-fixtures.md) | Independent image build/registry attestation and deployed-target fixtures | Implemented; private live acceptance pending |
+
+- [030: Reference deployment resources and image certification](030-reference-deployment-certification.md)

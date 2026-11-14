@@ -37,6 +37,9 @@ class Target:
 
     @classmethod
     def parse(cls, raw: object) -> "Target":
+        optional = (
+            {"reference_service"} if isinstance(raw, dict) and "reference_service" in raw else set()
+        )
         value = fields(
             raw,
             {
@@ -64,7 +67,8 @@ class Target:
                 "candidate_revision",
                 "expected_previous",
                 "runtime_environment",
-            },
+            }
+            | optional,
         )
         runtime_env = value["runtime_environment"]
         if not isinstance(runtime_env, list) or len(runtime_env) > 30:
@@ -153,6 +157,10 @@ class Target:
             "kube-node-lease",
         }:
             raise ValueError("dedicated application namespace required")
+        if optional:
+            from ..target_service.deployment import validate
+
+            validate(value["reference_service"], dict(value))
         return cls(wire(value), scope)
 
 

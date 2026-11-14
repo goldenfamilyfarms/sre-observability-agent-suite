@@ -113,7 +113,12 @@ def resources(request: DeliveryRequest) -> list[dict[str, Any]]:
             "ports": [{"name": "http", "port": raw["port"], "targetPort": raw["port"]}],
         },
     }
-    return [deployment, service]
+    extra = []
+    if "reference_service" in raw:
+        from ..target_service.deployment import resources as reference_resources
+
+        extra = reference_resources(request, deployment, metadata)
+    return [deployment, service, *extra]
 
 
 def application(request: DeliveryRequest) -> dict[str, Any]:

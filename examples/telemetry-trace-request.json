@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "scope": {
+    "service": "demo-service",
+    "environment": "development",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "environment_id": "preview-r1-pr1",
+    "generation": 1
+  },
+  "profile": "tempo-traces",
+  "start": "2026-11-07 17:55:00+00:00",
+  "end": "2026-11-07 18:00:00+00:00",
+  "step_seconds": 15,
+  "limit": 100,
+  "trace_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

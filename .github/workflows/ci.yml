@@ -46,6 +46,8 @@ jobs:
           python -m sre_suite.local_pilot --help
           python -m sre_suite.pilot_demo --help
           python -m sre_suite.telemetry --help
+          python -m sre_suite.telemetry.scheduling --help
+          python -m sre_suite.telemetry.schedule_child --help
           python -m sre_suite.jira_planning --help
           python -m sre_suite.jira_planning handoff --help
           python -m sre_suite.local_pilot handoff --help

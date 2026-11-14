@@ -21,7 +21,8 @@
         "revision": "service_version",
         "environment_id": "preview_id",
         "generation": "preview_generation"
-      }
+      },
+      "allow_full_traces": false
     },
     {
       "id": "loki-logs",
@@ -36,7 +37,8 @@
         "revision": "service_version",
         "environment_id": "preview_id",
         "generation": "preview_generation"
-      }
+      },
+      "allow_full_traces": false
     },
     {
       "id": "tempo-traces",
@@ -51,7 +53,8 @@
         "revision": "service.version",
         "environment_id": "preview.id",
         "generation": "preview.generation"
-      }
+      },
+      "allow_full_traces": false
     }
   ]
 }

@@ -53,6 +53,7 @@ class QueryRequest:
     end: datetime
     step_seconds: int = 15
     limit: int = 100
+    trace_id: str | None = None
 
     def __post_init__(self) -> None:
         identifier(self.profile)
@@ -64,6 +65,10 @@ class QueryRequest:
             raise ValueError("query window must follow the Unix epoch")
         integer(self.step_seconds, 1, 3600)
         integer(self.limit, 1, 500)
+        if self.trace_id is not None and (
+            not re.fullmatch(r"[0-9a-f]{32}", self.trace_id) or int(self.trace_id, 16) == 0
+        ):
+            raise ValueError("trace_id requires a nonzero full lowercase hex trace ID")
 
     def current(self, now: datetime) -> None:
         aware(now)
@@ -72,7 +77,10 @@ class QueryRequest:
 
     @classmethod
     def parse(cls, value: object) -> "QueryRequest":
-        raw = envelope(value, {"scope", "profile", "start", "end", "step_seconds", "limit"})
+        names = {"scope", "profile", "start", "end", "step_seconds", "limit"}
+        if isinstance(value, dict) and "trace_id" in value:
+            names.add("trace_id")
+        raw = envelope(value, names)
         return cls(
             scope_from_dict(raw["scope"]),
             text(raw["profile"]),
@@ -80,6 +88,7 @@ class QueryRequest:
             datetime.fromisoformat(text(raw["end"])),
             integer(raw["step_seconds"], 1, 3600),
             integer(raw["limit"], 1, 500),
+            None if raw.get("trace_id") is None else text(raw["trace_id"], 32),
         )
 
 
@@ -92,9 +101,14 @@ class QueryProfile:
     tenant_env: str | None
     query_template: str
     scope_labels: tuple[tuple[str, str], ...]
+    allow_full_traces: bool = False
 
     def __post_init__(self) -> None:
         identifier(self.id)
+        if type(self.allow_full_traces) is not bool or (
+            self.allow_full_traces and self.backend != Backend.TEMPO
+        ):
+            raise ValueError("full traces require explicit Tempo profile authorization")
         if not isinstance(self.backend, Backend):
             raise ValueError("invalid backend")
         https_url(self.base_url)
@@ -156,6 +170,8 @@ class QueryPolicy:
             raise ValueError("request does not match the operator-authorized scope")
         for profile in self.profiles:
             if profile.id == request.profile:
+                if request.trace_id is not None and not profile.allow_full_traces:
+                    raise ValueError("full trace fetching is not authorized")
                 return profile
         raise ValueError("query profile not authorized")
 
@@ -167,6 +183,11 @@ class QueryPolicy:
             raise ValueError("invalid profiles")
         profiles = []
         for item in items:
+            optional = (
+                {"allow_full_traces"}
+                if isinstance(item, dict) and ("allow_full_traces" in item)
+                else set()
+            )
             row = fields(
                 item,
                 {
@@ -177,7 +198,8 @@ class QueryPolicy:
                     "tenant_env",
                     "query_template",
                     "scope_labels",
-                },
+                }
+                | optional,
             )
             labels = fields(row["scope_labels"], set(SCOPE_FIELDS))
             profiles.append(
@@ -189,6 +211,7 @@ class QueryPolicy:
                     None if row["tenant_env"] is None else text(row["tenant_env"]),
                     text(row["query_template"]),
                     tuple(sorted((k, text(v, 128)) for k, v in labels.items())),
+                    boolean(row.get("allow_full_traces", False)),
                 )
             )
         return cls(scope_from_dict(raw["scope"]), tuple(profiles))
@@ -223,6 +246,33 @@ class TraceSummary:
     duration_ms: int
 
 
+def boolean(value: object) -> bool:
+    if type(value) is not bool:
+        raise ValueError("expected explicit boolean")
+    return value
+
+
+@dataclass(frozen=True)
+class TraceSpan:
+    span_id: str
+    parent_span_id: str | None
+    name: str
+    start_ns: int
+    end_ns: int
+    resource_index: int
+    scope_index: int
+    matches_scope: bool
+
+
+@dataclass(frozen=True)
+class FullTrace:
+    trace_id: str
+    spans: tuple[TraceSpan, ...]
+    # Preserve the complete bounded payload, including resources, instrumentation scopes,
+    # attributes, events, links, status, flags and forward-compatible extension fields.
+    otlp_json: str
+
+
 @dataclass(frozen=True)
 class QueryResult:
     backend: Backend
@@ -233,3 +283,4 @@ class QueryResult:
     metrics: tuple[MetricSeries, ...] = ()
     logs: tuple[LogEntry, ...] = ()
     traces: tuple[TraceSummary, ...] = ()
+    full_trace: FullTrace | None = None

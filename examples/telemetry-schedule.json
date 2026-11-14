@@ -1,0 +1,25 @@
+{
+  "first_run_at": "2026-11-07 18:00:30+00:00",
+  "interval_seconds": 60,
+  "max_lateness_seconds": 120,
+  "occurrences": 3,
+  "policy_sha256": "678537d5bc9bdc51283bf6d5a1d51462406559221016e0fe931df3695d69df06",
+  "request": {
+    "end": "2026-11-07 18:00:00+00:00",
+    "limit": 100,
+    "profile": "prometheus-up",
+    "schema_version": 2,
+    "scope": {
+      "environment": "development",
+      "environment_id": "preview-r1-pr1",
+      "generation": 1,
+      "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "service": "demo-service"
+    },
+    "start": "2026-11-07 17:55:00+00:00",
+    "step_seconds": 15,
+    "trace_id": null
+  },
+  "schedule_id": "pilot-telemetry",
+  "schema_version": 2
+}

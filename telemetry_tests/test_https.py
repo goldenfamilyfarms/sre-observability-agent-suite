@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import threading
 import unittest
+from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -14,6 +15,7 @@ from sre_suite.execution.http import JsonHttp
 from sre_suite.telemetry.adapters import TelemetryAdapter, TelemetryError
 from sre_suite.telemetry.contracts import Backend
 from tests.test_telemetry import SCOPE, profile, query, response
+from tests.test_tempo_traces import TRACE_ID, trace_profile, trace_response
 
 
 class HttpsTests(unittest.TestCase):
@@ -114,6 +116,27 @@ class HttpsTests(unittest.TestCase):
         with self.assertRaisesRegex(TelemetryError, "http_302"):
             TelemetryAdapter(profile(Backend.LOKI), self.client()).query(query(Backend.LOKI))
         self.assertEqual(len(self.requests), 1)
+
+    def test_full_trace_v2_over_verified_https(self):
+        type(self).payload = json.dumps(trace_response()).encode()
+        request = replace(query(Backend.TEMPO), trace_id=TRACE_ID)
+        result = TelemetryAdapter(trace_profile(), self.client()).query(request)
+        self.assertEqual(result.full_trace.trace_id, TRACE_ID)
+        endpoint = urlsplit(self.requests[-1][0])
+        self.assertEqual(endpoint.path, "/api/v2/traces/" + TRACE_ID)
+        self.assertEqual(parse_qs(endpoint.query)["span_pruning"], ["false"])
+        self.assertNotIn("q", parse_qs(endpoint.query))
+
+    def test_partial_full_trace_and_not_found_are_not_complete(self):
+        raw = trace_response()
+        raw["status"] = "PARTIAL"
+        type(self).payload = json.dumps(raw).encode()
+        request = replace(query(Backend.TEMPO), trace_id=TRACE_ID)
+        adapter = TelemetryAdapter(trace_profile(), self.client())
+        self.assertEqual(adapter.query(request).status.value, "partial")
+        type(self).status = 404
+        with self.assertRaisesRegex(TelemetryError, "http_404"):
+            adapter.query(request)
 
     def test_http_failure_duplicate_json_and_byte_budget(self):
         for status, payload in (

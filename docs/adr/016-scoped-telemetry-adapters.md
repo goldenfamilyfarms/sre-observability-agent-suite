@@ -11,3 +11,5 @@ Observations are evidence, not certification results. Empty results, warnings, u
 Alternatives rejected: unrestricted model-supplied query URLs would expose credentials and bypass scope; treating HTTP 200 or Tempo search completion as a certification pass would conceal missing/partial data. The draft 120-slot inventory remains unchanged until deterministic release/window-bound assertions and full source attribution are implemented.
 
 Consequences: operators must supply real source mappings and reviewed queries privately. The CLI supports explicit collection today; durable scheduling, total deadlines/cancellation, full trace fetching and executable 40/40/40 certification checks remain open. See the [operator guide](../telemetry-adapters.md), [implementation](../../sre_suite/telemetry/collector.py), [contract tests](../../tests/test_telemetry.py) and [HTTPS tests](../../telemetry_tests/test_https.py).
+
+Follow-up: ADR-017 implements full trace fetching and finite durable scheduling with process deadlines/cancellation in version 0.14. The remaining deterministic certification and live acceptance gates are unchanged.

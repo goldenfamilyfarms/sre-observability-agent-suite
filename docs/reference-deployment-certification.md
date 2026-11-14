@@ -61,8 +61,24 @@ Schema references: [Kubernetes persistent volumes](https://kubernetes.io/docs/co
 
 `python -m unittest discover -s image_build_tests -v` requires Docker/Buildx, Skopeo, OpenSSL and the pinned telemetry images from `sre_suite.local_telemetry.config.IMAGES`. CI runs it on Python 3.11 and 3.14. The complete test refuses build-only mode.
 
-The test builds the reviewed standalone source, publishes to a disposable TLS registry, verifies the manifest digest and builder evidence, and runs the exact OCI image. Independent fixture runner/assessor identities drive real HTTPS requests; the service exports actual traces and logs and Prometheus scrapes actual counters. The container is replaced with its persistent volume and fresh worker journals replay stable workload keys. The collector uploads real backend captures and the verifier produces all 120 results (40 per category), including explicit inconclusive outcomes for unmeasured concerns. There are no imported demo capability exclusions or fabricated telemetry measurements.
+The test builds the reviewed standalone source, publishes to a disposable TLS registry, verifies the manifest digest and builder evidence, and runs the exact OCI image. Independent fixture runner/assessor identities drive real HTTPS requests; the service exports actual traces and logs and Prometheus scrapes actual counters. The container is replaced with its persistent volume and explicit HTTP retries replay stable workload keys and durable worker journals recover the same measurements. The collector uploads real backend captures and the verifier produces all 120 results (40 per category), including explicit inconclusive outcomes for unmeasured concerns. There are no imported demo capability exclusions or fabricated telemetry measurements.
 
 This is a complete **image-to-certification report** test, not a claim of 120 passing checks. Its reviewed reference oracle checks the implemented HTTP/resource/correlation/counter behaviors and requires the final gate to remain blocked where measurements are absent. Negative cases cover artifact/plan substitution, preview ID/generation substitution, missing telemetry and evidence reuse after generation advancement. Certificate journal replay must return the same receipt for the unchanged request.
 
 The integration uses modeled GKE/Argo responses and a local TLS ingress stand-in; it does not deploy to any cluster. Docker, the image registry, container replacement, telemetry backends, fixture execution and certification engine are real. Private CSI, ingress, Prometheus Operator, GKE/Argo rollout and recovery acceptance remain necessary.
+
+## Complete journey traces
+
+The runner must export its measured client spans as well as the service's server spans. Add this optional field to the private `prepare-fixtures` configuration to enable the complete trace path:
+
+```json
+"journey_export": {
+  "base_url": "https://tempo.example.invalid",
+  "authorization_env": "SRE_JOURNEY_TRACES_AUTH",
+  "ca_env": null
+}
+```
+
+Provide a dedicated OTLP write credential in `SRE_JOURNEY_TRACES_AUTH` to the runner only. The assessor never receives this token. Loopback tests may use `SRE_JOURNEY_TRACE_CA_FILE`; private endpoints use the normal trust store. The exporter sends to `/v1/traces`, refuses redirects and rejects partial/warning acknowledgements. Its full configuration is covered by the fixture policy fingerprint and dispatch checks.
+
+Client spans measure actual HTTP call boundaries and reuse the exact parent IDs sent to the target. A root envelope covers the measured journey interval. Runner resource identity is `sre-fixture-runner`, distinct from the target service; all artifact/plan/preview attributes remain intact. The independent collector still queries and authenticates the complete trace. No service span is synthesized or rewritten. Export receipts and client measurements use the existing durable journal; retry after a lost acknowledgement sends identical span bytes and rechecks generation/authority. Without this opt-in, missing parent spans correctly leave full-trace checks inconclusive.

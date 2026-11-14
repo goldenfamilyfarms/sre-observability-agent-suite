@@ -94,6 +94,21 @@ class ReferenceTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 acknowledge_trace(value)
 
+    def test_journey_array_assertions_require_exact_status_and_body(self):
+        from sre_suite.verification.predicates import MISSING, get, matches
+
+        result = {"steps": [{"status": 200, "body": {"status": "ok"}}]}
+        expected = {"/steps/0/status": 200, "/steps/0/body/status": "ok"}
+        self.assertTrue(matches(result, expected))
+        for path in ("/steps/1/status", "/steps/-1/status", "/steps/01/status", "/steps/-/status"):
+            self.assertIs(get(result, path), MISSING)
+        result["steps"][0]["status"] = 500
+        self.assertFalse(matches(result, expected))
+        result["steps"][0]["status"] = 200
+        result["steps"][0]["body"]["status"] = "failed"
+        self.assertFalse(matches(result, expected))
+        self.assertEqual(get({"a/b": [{"~": 1}]}, "/a~1b/0/~0"), 1)
+
     def test_export_is_standalone_and_refuses_overwrite(self):
         export_reference(self.root / "reference")
         content = (self.root / "reference/reference_service.py").read_text()

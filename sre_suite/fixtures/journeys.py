@@ -1,6 +1,7 @@
 """Reviewed multi-service HTTP journeys with stable tracing and at-most-once POST intent."""
 
 import re
+import time
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
@@ -76,10 +77,12 @@ class JourneyTarget(JsonHttp):
         evidence: EvidenceClient,
         journal: Journal,
         target_service: dict[str, Any] | None = None,
+        trace_export: dict[str, Any] | None = None,
     ) -> None:
         self.configuration, self.policy, self.env = configuration, policy_sha256, env
         self.evidence, self.journal = evidence, journal
         self.target_service = target_service
+        self.trace_export = trace_export
 
     def call(self, method: str, path: str, payload: object = None) -> object:
         command = wire(
@@ -187,6 +190,7 @@ class JourneyTarget(JsonHttp):
                     expected_status=step["success_status"],
                     local_ca_file=self.env[origin["ca_env"]] if origin["ca_env"] else None,
                 )
+                started_ns = time.time_ns()
                 try:
                     body = transport.call(step["method"], step["path"], step["payload"])
                     status = step["success_status"]
@@ -194,6 +198,7 @@ class JourneyTarget(JsonHttp):
                     if not 400 <= error.status <= 599:
                         raise
                     status, body = error.status, None
+                ended_ns = max(time.time_ns(), started_ns + 1)
                 guard()
                 if len(canonical(body).encode()) > 8192:
                     raise ValueError("journey response exceeds evidence budget")
@@ -203,6 +208,21 @@ class JourneyTarget(JsonHttp):
                     "origin": step["origin"],
                     "path": step["path"],
                     "executed_at": datetime.now(UTC).isoformat(),
+                    **(
+                        {
+                            "client_trace": {
+                                "trace_id": trace_ids[0],
+                                "span_id": digest(key)[:16],
+                                "start_ns": started_ns,
+                                "end_ns": ended_ns,
+                                "method": step["method"],
+                                "path": step["path"],
+                                "status": status,
+                            }
+                        }
+                        if self.trace_export
+                        else {}
+                    ),
                 }
 
             result = self.journal.compute(key, step, invoke, guard)
@@ -216,3 +236,21 @@ class JourneyTarget(JsonHttp):
             "executed_at": results[-1]["executed_at"],
             "result": {"steps": results, "requests": len(results)},
         }
+
+    def complete(self, responses: list[dict[str, Any]], heartbeat: Any) -> None:
+        if self.trace_export is None or self.target_service is None:
+            raise ValueError("reviewed journey exporter required")
+        from .journey_traces import publish
+        from .target_service import verify
+
+        binding = responses[0]["binding"]
+        proof = self.target_service
+
+        def guard() -> None:
+            heartbeat()
+            scope = scope_from_dict(binding["release"]["scope"])
+            self.evidence.context(scope, binding["context_version"])
+            verify(proof, binding, self.evidence, datetime.now(UTC))
+
+        resource = verify(self.target_service, binding, self.evidence, datetime.now(UTC))
+        publish(self.trace_export, self.env, resource, responses, self.journal, guard)

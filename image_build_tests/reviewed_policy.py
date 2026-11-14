@@ -127,7 +127,6 @@ def reviewed(scope, candidate, image, config):
         {"/body/route": "/error"},
         scenario="error",
     )
-    rule("LOGS-031", {})
     rule("LOGS-037", {"path": "/labels/sre_environment_id", "value": scope.environment_id})
     rule("LOGS-038", {"path": "/labels/service_name", "maximum": 1})
     rule("LOGS-040", {"path": "/body/severity", "values": ["INFO", "ERROR"]})

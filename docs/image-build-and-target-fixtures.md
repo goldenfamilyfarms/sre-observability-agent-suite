@@ -95,7 +95,8 @@ Private fixture preparation JSON contains:
 - `checks`: all 120 independently reviewed `{scenario, expected, justification}` entries, mapped to `health`, `unicode` or `error`;
 - `runner`, `runner_queue`, `assessor_queue`;
 - `origin`: `{base_url, authorization_env, ca_env}`, using a dedicated `SRE_JOURNEY_*_AUTH` variable and optional loopback-only journey CA;
-- `target_service`: the independent evidence/identity configuration described above.
+- `target_service`: the independent evidence/identity configuration described above;
+- optional `journey_export`: reviewed OTLP transport for measured runner client spans; see [complete journey traces](reference-deployment-certification.md#complete-journey-traces).
 
 ```sh
 python -m sre_suite.target_service prepare-fixtures --config /private/sre/target-fixtures.json \

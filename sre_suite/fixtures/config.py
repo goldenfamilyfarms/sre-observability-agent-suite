@@ -22,6 +22,10 @@ def environment(policy: FixturePolicy, role: str, env: Mapping[str, str]) -> dic
         if policy.journeys:
             for origin in policy.journeys["origins"].values():
                 names.extend([origin["authorization_env"], origin["ca_env"]])
+        if policy.journey_export:
+            names.extend(
+                [policy.journey_export["authorization_env"], policy.journey_export["ca_env"]]
+            )
         for name in names:
             if name and name in env:
                 result[name] = env[name]

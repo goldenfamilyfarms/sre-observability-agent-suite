@@ -42,6 +42,7 @@ def main() -> int:
                     client(os.environ),
                     Journal(args.journal),
                     policy.target_service,
+                    policy.journey_export,
                 )
             else:
                 chosen_target = target(policy, os.environ)

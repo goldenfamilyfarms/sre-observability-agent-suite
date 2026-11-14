@@ -18,7 +18,16 @@ CHILDREN = {
     "fixtures": "FixtureAssessment",
     "delivery": "ReleaseDelivery",
 }
-LOCAL = {"epic", "publish", "handoff", "steward", "shipping", "analysis"}
+LOCAL = {
+    "epic",
+    "publish",
+    "handoff",
+    "steward",
+    "shipping",
+    "analysis",
+    "image-build",
+    "image-publish",
+}
 
 
 @dataclass(frozen=True)
@@ -103,6 +112,10 @@ class SuitePlan:
 
 def passed(kind: str, result: dict[str, Any]) -> bool:
     """A completed process is not an accepted gate. Unknown results fail closed."""
+    if kind == "image-build":
+        return result.get("outcome") == "built" and isinstance(result.get("image_digest"), str)
+    if kind == "image-publish":
+        return result.get("outcome") == "attested" and isinstance(result.get("build"), dict)
     if kind == "engineering":
         return result.get("outcome") == "ready_for_review" and result.get("jira_reported") is True
     if kind == "discovery":

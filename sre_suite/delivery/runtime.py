@@ -174,7 +174,12 @@ class DeliveryRuntime:
         if not status["ready"]:
             return status
         # Saved observations never substitute for live deployment reads.
-        key = self.request.identity + "-readiness-" + digest(status)
+        # A live observation must be refreshable even when resource versions did not change.
+        key = (
+            self.request.identity
+            + "-readiness-"
+            + digest([status, int(self.clock().timestamp()) // 15])
+        )
         value = self.journal.compute(
             key,
             self.request.binding.wire(),

@@ -40,6 +40,10 @@ class FixtureRuntime:
         ):
             raise ValueError("fixture dispatch is stale or too early")
         self.evidence.context(request.scope, request.binding["context_version"])
+        if self.policy.target_service:
+            from .target_service import verify
+
+            verify(self.policy.target_service, request.binding, self.evidence, self.clock())
         heartbeat()
 
     def command(self, request: FixtureRequest, scenario: Scenario) -> dict[str, Any]:

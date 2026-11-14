@@ -83,7 +83,12 @@ class SuiteExecution:
                 self.completed.append(node["id"])
                 # A changed source must be rediscovered and approved. Never rewrite a scoped plan
                 # in history or silently dispatch dependent work against yesterday's source.
-                if node["checkpoint_after"] or node["kind"] in {"shipping", "steward", "epic"}:
+                if node["checkpoint_after"] or node["kind"] in {
+                    "shipping",
+                    "steward",
+                    "epic",
+                    "image-publish",
+                }:
                     self.state = "awaiting_review"
                     return {
                         "outcome": "awaiting_review",

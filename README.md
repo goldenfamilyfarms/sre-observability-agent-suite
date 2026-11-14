@@ -4,7 +4,9 @@ A public, generic foundation for Jira-driven observability engineering using Cla
 
 **Status: all twelve proposal roles have bounded v1 implementations; private live acceptance remains pending.** Version 0.25 adds [authenticated approvals and knowledge stewardship, independent engineering roles, Jira epics, durable suite dispatch, GKE/Helm/Argo delivery, guarded shipping, generic service journeys and runtime/regression analysis](docs/agent-suite-operations.md). Artifact, plan, environment ID and generation checks remain mandatory. No organization-specific deployment, production recovery or private service certification is implied by local tests. See the [completion ledger](docs/suite-completion.md) for implementation boundaries and remaining operational acceptance.
 
-The existing local real-backend demo evaluates all 120 catalog slots: 76 applicable checks and 44 capability-backed exclusions. Missing measurements remain non-passing. Workflow start is explicit; production requires a current authenticated human approval of the exact release.
+Version 0.26 adds [reviewed image builds, registry publication and authenticated attestation, plus a containerized Python target and image-bound fixtures](docs/image-build-and-target-fixtures.md).
+
+The existing local real-backend demo evaluates all 120 catalog slots: 76 applicable checks and 44 capability-backed exclusions. These results do not certify the new Python target or private services. Missing measurements remain non-passing. Workflow start is explicit; production requires a current authenticated human approval of the exact release.
 
 ## Run locally
 
@@ -15,7 +17,7 @@ python -m unittest discover -v
 python -m sre_suite.demo
 ```
 
-The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.24.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
+The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.26.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
 
 For the same static checks as CI:
 

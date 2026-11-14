@@ -75,9 +75,11 @@ class JourneyTarget(JsonHttp):
         env: Mapping[str, str],
         evidence: EvidenceClient,
         journal: Journal,
+        target_service: dict[str, Any] | None = None,
     ) -> None:
         self.configuration, self.policy, self.env = configuration, policy_sha256, env
         self.evidence, self.journal = evidence, journal
+        self.target_service = target_service
 
     def call(self, method: str, path: str, payload: object = None) -> object:
         command = wire(
@@ -119,8 +121,33 @@ class JourneyTarget(JsonHttp):
             if not start <= datetime.now(UTC) < end:
                 raise ValueError("journey window closed")
             self.evidence.context(scope, binding["context_version"])
+            if self.target_service:
+                from .target_service import verify
+
+                verify(self.target_service, binding, self.evidence, datetime.now(UTC))
 
         guard()
+        expected_identity = None
+        if self.target_service:
+            from .target_service import verify
+
+            expected_identity = verify(
+                self.target_service, binding, self.evidence, datetime.now(UTC)
+            )
+            for origin in self.configuration["origins"].values():
+                # For this reference profile, every origin must serve the same certified release.
+                # Other-service dependencies belong in separately bound fixture policies.
+                identity = JsonHttp(
+                    origin["base_url"],
+                    self.env[origin["authorization_env"]],
+                    timeout=5,
+                    local_ca_file=self.env[origin["ca_env"]] if origin["ca_env"] else None,
+                ).call("GET", "/sre/identity")
+                if identity != {"resource": expected_identity}:
+                    raise ValueError(
+                        "live target identity differs from independent deployment proof"
+                    )
+                guard()
         trace_ids = command["trace_ids"]
         if (
             not isinstance(trace_ids, list)
@@ -150,6 +177,9 @@ class JourneyTarget(JsonHttp):
                     origin["base_url"],
                     authorization,
                     headers={
+                        **(
+                            {"X-SRE-Target": digest(expected_identity)} if expected_identity else {}
+                        ),
                         "traceparent": "00-" + trace_ids[0] + "-" + digest(key)[:16] + "-01",
                         "Idempotency-Key": key,
                     },

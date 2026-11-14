@@ -6,6 +6,7 @@ from typing import Any
 
 from ..api_wire import envelope, fields, text
 from ..contracts import Environment, JiraExecutionTicket, Scope
+from ..discovery.contracts import DiscoveryOrigin
 from ..execution.wire import canonical, digest, ticket_from_wire, ticket_json
 from ..planning import execution_order
 from ..serialization import scope_from_dict
@@ -26,10 +27,14 @@ class Plan:
     repository: str
     scope: Scope
     nodes: tuple[Node, ...]
+    discovery: DiscoveryOrigin | None = None
 
     @classmethod
     def parse(cls, value: object) -> "Plan":
-        raw = envelope(value, {"id", "project", "repository", "scope", "nodes"})
+        names = {"id", "project", "repository", "scope", "nodes"}
+        if isinstance(value, dict) and "discovery" in value:
+            names.add("discovery")
+        raw = envelope(value, names)
         identity, project, repository = (text(raw[k], 128) for k in ("id", "project", "repository"))
         if not re.fullmatch(r"[a-z][a-z0-9-]{0,63}", identity) or not re.fullmatch(
             r"[A-Z][A-Z0-9]{1,30}", project
@@ -76,7 +81,15 @@ class Plan:
                 }
             )
             nodes.append(Node(name, summary, tuple(deps), ticket))
-        plan = cls(identity, project, repository, scope, tuple(nodes))
+        origin = DiscoveryOrigin.parse(raw["discovery"]) if "discovery" in raw else None
+        if origin is not None and (
+            origin.request.scope != scope
+            or origin.request.repository != repository
+            or origin.request.project != project
+            or origin.request.execution_id != identity
+        ):
+            raise ValueError("discovery origin differs from planned scope")
+        plan = cls(identity, project, repository, scope, tuple(nodes), origin)
         plan.order()
         if len(canonical(plan.json()).encode()) > 100_000:
             raise ValueError("plan too large")
@@ -126,6 +139,7 @@ class Plan:
             "repository": self.repository,
             "scope": asdict(self.scope),
             "nodes": nodes,
+            **({"discovery": self.discovery.wire()} if self.discovery else {}),
         }
 
     @property

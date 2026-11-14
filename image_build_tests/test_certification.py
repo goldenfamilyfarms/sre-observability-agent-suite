@@ -187,6 +187,8 @@ class ImageCertificationTests(test_pipeline.ImagePipelineTests):
                     self.send_header("Content-Length", str(len(data)))
                     self.end_headers()
                     self.wfile.write(data)
+                except (OSError, http.client.HTTPException):
+                    self.send_error(503)
                 finally:
                     connection.close()
 

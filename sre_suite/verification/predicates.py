@@ -159,9 +159,15 @@ def get(row: object, path: str) -> Any:
     value = row
     for part in path[1:].split("/"):
         key = part.replace("~1", "/").replace("~0", "~")
-        if not isinstance(value, dict) or key not in value:
+        if isinstance(value, dict) and key in value:
+            value = value[key]
+        elif isinstance(value, list) and re.fullmatch(r"0|[1-9][0-9]*", key):
+            index = int(key)
+            if index >= len(value):
+                return MISSING
+            value = value[index]
+        else:
             return MISSING
-        value = value[key]
     return value
 
 

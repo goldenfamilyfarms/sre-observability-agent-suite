@@ -46,6 +46,8 @@ jobs:
           python -m sre_suite.execution.cli pilot-setup --help
           python -m sre_suite.local_pilot --help
           python -m sre_suite.pilot_demo --help
+          python -m sre_suite.verification --help
+          python -m sre_suite.verification.child --help
           python -m sre_suite.telemetry --help
           python -m sre_suite.telemetry.scheduling --help
           python -m sre_suite.telemetry.schedule_child --help
@@ -53,7 +55,7 @@ jobs:
           python -m sre_suite.jira_planning handoff --help
           python -m sre_suite.local_pilot handoff --help
           python -c 'from sre_suite.pilot_demo.prepare import template; assert len(template()) == 6; assert "acceptance.py" in template()'
-          python -c 'from sre_suite.certification import load_catalog; from sre_suite.api import EvidenceContextApi; assert len(load_catalog().checks) == 120; assert len(EvidenceContextApi.ROUTES) == 3'
+          python -c 'from sre_suite.certification import load_catalog; from sre_suite.api import EvidenceContextApi; assert len(load_catalog().checks) == 120; assert all(c.implemented for c in load_catalog().checks); assert len(EvidenceContextApi.ROUTES) == 3'
 
   postgres:
     runs-on: ubuntu-latest

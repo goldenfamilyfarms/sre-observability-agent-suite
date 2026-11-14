@@ -33,7 +33,7 @@ docker pull postgres@sha256:748a18a54d3842d43bc156f0840d78029b8d349e0feca98c12b9
 docker pull python@sha256:65bd3d9f1d7fa268dd1909973ba7eb4bdf41f6dcf2cfbe76ba9528b170f3fd79
 ```
 
-- [ ] Create/select one synthetic issue in your authorized Jira project. Record its real key, plain-text custom field for the contract, current status and permitted nonterminal in-progress/review/blocked transition IDs. This preparation does not create an issue. The [publication guide](pr-and-jira-publication.md) explains permissions and transition mappings.
+- [ ] Create/select one synthetic issue in your authorized Jira project. Record its real key, contract custom field for plain JSON text, current status and permitted nonterminal in-progress/review/blocked transition IDs. This preparation does not create an issue. The [publication guide](pr-and-jira-publication.md) explains permissions and transition mappings.
 - [ ] Confirm that the selected Jira workflow and repository automations cannot ship or deploy this pilot. Establish an explicit model budget for the complete run. The generated USD 2 setting bounds each CLI invocation, not total spending across stages and retries.
 - [ ] Choose a new private parent directory outside **every** Git checkout, with physical absolute paths (no symlink components) and mode 0700. Keep credentials, stack state, evidence and results there. The following `/absolute/private/pilot` paths are placeholders to replace, not paths to copy literally.
 
@@ -109,7 +109,7 @@ python -m sre_suite.pilot_demo finalize-ticket \
 
 The authenticated setup registers the generation and uploads/verifies baseline bytes before producing `execution.json` and server-owned evidence metadata. Finalization checks that metadata against the full scope, content digest, times and known baseline report, then reconstructs the reviewed requirements. It ignores edited drafts. This is a local consistency check: it does not contact the API or prove that a metadata file came from a server. The mandatory later preflight verifies evidence availability, producer and bytes through the authenticated API.
 
-- [ ] Put the complete `ticket.json` envelope into the configured Jira plain-text custom field. Confirm the actual issue key, project, repository, source SHA, preview ID, generation and returned evidence match the generated execution spec. Do not paste it into a rich-text field or replace evidence with placeholders.
+- [ ] Put the complete `ticket.json` envelope into the configured Jira contract field as plain JSON text. Confirm the actual issue key, project, repository, source SHA, preview ID, generation and returned evidence match the generated execution spec. The runtime accepts legacy string values or plain ADF text paragraphs from a multiline field. Do not add rich formatting or replace evidence with placeholders.
 
 ## 4. Start a worker and inspect preflight
 

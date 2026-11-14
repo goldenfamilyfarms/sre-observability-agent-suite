@@ -105,7 +105,7 @@ python -m sre_suite.demo_fixture export \
 
 This command processes at most two pending batches and exits. It does not run in the server background, create schedules, or start workflows. Re-run after a transient failure; already acknowledged batches are skipped. Delivery requires current context and is bounded by the pinned window plus the existing 120-second collection grace. Arrange backend ingestion and scrape time within the observation window. If collection wins the race or a deadline is missed, certification must fail and a new reviewed run is required; no window is extended silently.
 
-OTLP partial rejections or warning messages leave the batch pending. After a lost acknowledgement, delivery is **at least once**: the same stored bytes/IDs/timestamps may be sent again. The fixture's local durable effects and metric counts do not repeat, but downstream duplicate handling must be accepted privately. Do not claim exactly-once telemetry ingestion.
+Only HTTP 200 is accepted for OTLP and HTTP 204 for Loki; other success-like codes do not acknowledge delivery. OTLP partial rejections or warning messages leave the batch pending. After a lost acknowledgement, delivery is **at least once**: the same stored bytes/IDs/timestamps may be sent again. The fixture's local durable effects and metric counts do not repeat, but downstream duplicate handling must be accepted privately. Do not claim exactly-once telemetry ingestion.
 
 ## Durability and validation boundaries
 

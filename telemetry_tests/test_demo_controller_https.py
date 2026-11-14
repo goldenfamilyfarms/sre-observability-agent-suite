@@ -164,10 +164,10 @@ class DemoHttpsTests(unittest.TestCase):
                         if mode[0] == "partial"
                         else b"{}"
                     )
-                    self.send_response(200)
+                    self.send_response(202 if mode[0] == "wrong-status" else 200)
                 else:
                     body = b""
-                    self.send_response(204)
+                    self.send_response(260 if mode[0] == "wrong-status" else 204)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
@@ -210,6 +210,11 @@ class DemoHttpsTests(unittest.TestCase):
             self.assertEqual(received[1][0:2], ("/v1/traces", "Bearer trace-ingest"))
             self.assertEqual(received[1], received[2])
             self.assertNotIn(AUTH, json.dumps(received))
+            mode[0] = "wrong-status"
+            for signal, path in (("traces", "/v1/traces"), ("logs", "/loki/api/v1/push")):
+                with self.assertRaises(RemoteError) as failure:
+                    clients[signal].call("POST", path, {})
+                self.assertEqual(failure.exception.status, 202 if signal == "traces" else 260)
         finally:
             sink.shutdown()
             sink.server_close()

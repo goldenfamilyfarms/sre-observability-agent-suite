@@ -34,7 +34,12 @@ def transports(config: object, env: Mapping[str, str]) -> dict[str, JsonHttp]:
         if urlsplit(base).path:
             raise ValueError("export requires an exact HTTPS origin")
         result[signal] = JsonHttp(
-            base, token, headers=headers, timeout=10, local_ca_file=env[str(ca)] if ca else None
+            base,
+            token,
+            headers=headers,
+            timeout=10,
+            local_ca_file=env[str(ca)] if ca else None,
+            expected_status=200 if signal == "traces" else 204,
         )
     return result
 

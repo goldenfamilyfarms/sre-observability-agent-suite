@@ -5,6 +5,8 @@ Its exact source bytes must occur in the authorized source-candidate recipe.
 """
 
 import re
+import traceback
+from itertools import islice
 
 CAPABILITIES = {
     "http": True,
@@ -38,7 +40,15 @@ def handle(method: str, path: str, trace_id: object) -> tuple[int, str, dict[str
         except RuntimeError as error:
             status, route, body = 500, "/error", "controlled error"
             # Fixed safe exception details; no stack locals, request content or credentials.
-            event.update(exception_type=type(error).__name__, exception_message=str(error))
+            event.update(
+                exception_type=type(error).__name__,
+                exception_message=str(error),
+                # Actual traceback locations, bounded and scrubbed of paths, source and locals.
+                exception_stack=[
+                    {"function": frame.f_code.co_name, "line": line}
+                    for frame, line in islice(traceback.walk_tb(error.__traceback__), 8)
+                ],
+            )
     else:
         status, route, body = 404, "unknown", "not found"
     event.update(route=route, status=status)

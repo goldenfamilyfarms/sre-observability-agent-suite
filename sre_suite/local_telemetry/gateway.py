@@ -2,9 +2,11 @@
 
 import hmac
 import http.client
+import json
 import re
 import socket
 import ssl
+from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any
@@ -34,6 +36,8 @@ def route(backend: str, method: str, path: str) -> tuple[str, str]:
             backend == "tempo" and re.fullmatch(r"/api/v2/traces/[0-9a-f]{32}", parsed.path)
         ):
             return backend, backend + "_read"
+        if path == "/metrics" and backend == "loki":
+            return backend, backend + "_read"
         if path == "/ready":
             return backend, backend + "_read"
     if method == "POST" and not parsed.query:
@@ -62,6 +66,32 @@ def backend_call(
         return response.status, data, response.getheader("Content-Type", "application/json")
     finally:
         connection.close()
+
+
+def retention_seconds(payload: bytes) -> int:
+    """Read only the required fields from Loki's bounded, effective YAML config endpoint.
+
+    Deliberately not a general YAML loader: duplicate/ambiguous fields and unrecognized
+    representations fail closed instead of creating a retention claim.
+    """
+    document = payload.decode("utf-8")
+
+    def field(section: str, name: str) -> str:
+        sections = re.findall(r"^" + section + r":\n((?:[ \t]+[^\n]*\n|\n)*)", document, re.M)
+        if len(sections) != 1:
+            raise ValueError("ambiguous effective backend config")
+        values = re.findall(r"^  " + name + r": ([^\n]+)$", sections[0], re.M)
+        if len(values) != 1:
+            raise ValueError("missing effective backend config")
+        return str(values[0])
+
+    if (
+        field("compactor", "retention_enabled") != "true"
+        or field("compactor", "delete_request_store") != "filesystem"
+        or field("limits_config", "retention_period") not in {"24h", "24h0m0s", "1d", "1d0h0m0s"}
+    ):
+        raise ValueError("effective retention policy differs")
+    return 86400
 
 
 def server(root: Path, config: Config, backend: str) -> HTTPServer:
@@ -124,6 +154,37 @@ def server(root: Path, config: Config, backend: str) -> HTTPServer:
                     if lengths not in ([], ["0"]):
                         raise ValueError("GET body forbidden")
                     body = None
+                if self.path == "/metrics":
+                    # Config evidence comes from the stack owner, never the demo application.
+                    # Readiness ties the validated read-only mounted config to a live backend.
+                    if (
+                        Config.load(root) != config
+                        or backend_call(config.ports["loki"], "GET", "/ready")[0] != 200
+                    ):
+                        raise ValueError("backend policy unavailable")
+                    config_status, effective, _ = backend_call(
+                        config.ports["loki"], "GET", "/config"
+                    )
+                    if config_status != 200:
+                        raise ValueError("effective backend config unavailable")
+                    retention = retention_seconds(effective)
+                    mapping = {
+                        "service": "service_name",
+                        "environment": "deployment_environment",
+                        "revision": "service_version",
+                        "environment_id": "preview_id",
+                        "generation": "preview_generation",
+                    }
+                    labels = ",".join(
+                        k + "=" + json.dumps(str(asdict(config.scope)[n]))
+                        for n, k in mapping.items()
+                    )
+                    self.reply(
+                        200,
+                        (f"sre_local_loki_retention_seconds{{{labels}}} {retention}\n").encode(),
+                        "text/plain; version=0.0.4",
+                    )
+                    return
                 path = (
                     "/-/ready" if self.path == "/ready" and backend == "prometheus" else self.path
                 )

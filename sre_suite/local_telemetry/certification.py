@@ -23,6 +23,7 @@ def prepare(
     output: Path,
     *,
     window_seconds: int = 30,
+    demo_instrumentation: bool = False,
     collector_queue: str = "sre-local-telemetry-v1",
     verifier_queue: str = "sre-local-certification-v1",
 ) -> dict[str, Any]:
@@ -53,6 +54,10 @@ def prepare(
         raise ValueError("all five telemetry/fixture/certification roles require separate queues")
     managed = copy.deepcopy(original)
     assert isinstance(managed, dict)
+    if demo_instrumentation:
+        from .demo_policy import reviewed
+
+        managed = reviewed(managed)
     verification = managed["fixture_policy"]["verification_policy"]
     for source in verification["sources"]:
         profile = source["profile"]

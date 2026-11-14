@@ -1,5 +1,6 @@
 """Actual TLS gateway role separation and HTTP framing against a local backend."""
 
+import http.client
 import json
 import socket
 import ssl
@@ -8,7 +9,8 @@ from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from sre_suite.execution.http import JsonHttp, RemoteError
-from sre_suite.local_telemetry.config import initialize
+from sre_suite.execution.wire import canonical
+from sre_suite.local_telemetry.config import configurations, initialize
 from sre_suite.local_telemetry.gateway import server
 from tests.test_local_pilot import LocalFixture
 
@@ -32,15 +34,20 @@ class GatewayTests(LocalFixture):
         )
         self.calls = []
         self.redirect = False
+        self.retention = (
+            "compactor:\n  retention_enabled: true\n  delete_request_store: filesystem\n"
+            "limits_config:\n  retention_period: 24h\n"
+        )
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self):
                 owner.calls.append((self.command, self.path, dict(self.headers)))
                 self.send_response(302 if owner.redirect else 200)
-                self.send_header("Content-Length", "2")
+                data = owner.retention.encode() if self.path == "/config" else b"{}"
+                self.send_header("Content-Length", str(len(data)))
                 self.end_headers()
-                self.wfile.write(b"{}")
+                self.wfile.write(data)
 
             def do_POST(self):
                 self.rfile.read(int(self.headers["Content-Length"]))
@@ -86,6 +93,38 @@ class GatewayTests(LocalFixture):
         self.backend.shutdown()
         self.backend.server_close()
         self.backend_thread.join(timeout=5)
+
+    def test_retention_probe_uses_effective_backend_config_and_separate_read_credential(self):
+        document = json.loads((self.telemetry / "stack.json").read_text())
+        document["ports"] = self.config.ports
+        (self.telemetry / "stack.json").write_text(canonical(document))
+        for backend, value in configurations(self.config).items():
+            (self.telemetry / (backend + ".json")).write_text(canonical(value))
+
+        def get(role):
+            connection = http.client.HTTPSConnection(
+                "localhost",
+                self.config.ports["loki_tls"],
+                context=ssl.create_default_context(cafile=str(self.telemetry / "server.crt")),
+                timeout=3,
+            )
+            try:
+                connection.request("GET", "/metrics", headers={"Authorization": self.tokens[role]})
+                response = connection.getresponse()
+                return response.status, response.read()
+            finally:
+                connection.close()
+
+        self.assertEqual(get("logs_write")[0], 401)
+        self.assertEqual(get("tempo_read")[0], 401)
+        status, body = get("loki_read")
+        self.assertEqual(status, 200)
+        self.assertIn(b"sre_local_loki_retention_seconds{", body)
+        self.assertTrue(body.endswith(b" 86400\n"))
+        self.assertIn(("GET", "/config"), [(c[0], c[1]) for c in self.calls])
+        self.retention = self.retention.replace("24h", "0s")
+        self.assertEqual(get("loki_read")[0], 400)
+        self.assertNotIn(b"sre_local_loki_retention_seconds", get("loki_read")[1])
 
     def test_auth_roles_and_credentials_never_forwarded(self):
         self.assertEqual(self.read.call("GET", "/loki/api/v1/query_range?query=synthetic"), {})

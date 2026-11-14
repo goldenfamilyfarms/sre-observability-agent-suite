@@ -347,7 +347,8 @@ def evaluate(
             if operator == "available" and any(v != 1 for v in numbers):
                 return False
             if operator == "sample_age" and not all(
-                0 <= end_ns / 1e9 - v <= p["maximum_seconds"] for v in numbers
+                0 <= sample["timestamp_ns"] / 1e9 - v <= p["maximum_seconds"]
+                for sample, v in zip(samples, numbers, strict=True)
             ):
                 return False
             if operator == "metric_expected":

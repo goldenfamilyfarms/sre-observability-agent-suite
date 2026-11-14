@@ -20,6 +20,7 @@ from ..serialization import scope_from_dict
 from ..telemetry.contracts import integer
 from ..telemetry.schedule_config import private_path
 from ..verification.config import private_document
+from .recording import recording_rules
 
 IMAGES = {
     "prometheus": (
@@ -108,6 +109,8 @@ class Config:
         for backend, expected in configurations(config).items():
             if private_document(root / (backend + ".json")) != expected:
                 raise ValueError("backend configuration differs from the generated stack")
+        if private_document(root / "recording.json") != recording_rules():
+            raise ValueError("recording rules differ from reviewed calculations")
         return config
 
 
@@ -152,6 +155,8 @@ def initialize(
         "tokens.json": (canonical(tokens) + "\n").encode(),
         "target.crt": _read(ca, 65536),
         "metrics.token": metrics[7:].encode(),
+        "loki-read.token": tokens["loki_read"][7:].encode(),
+        "recording.json": (canonical(recording_rules()) + "\n").encode(),
     }
     # Atomic publication keeps generated private credentials out of partially initialized stacks.
     with tempfile.TemporaryDirectory() as temporary:
@@ -231,15 +236,25 @@ def configurations(c: Config) -> dict[str, Any]:
     return {
         "prometheus": {
             "global": {"scrape_interval": "1s", "scrape_timeout": "900ms"},
+            "rule_files": ["/config/recording.json"],
             "scrape_configs": [
                 {
                     "job_name": "sre-demo",
+                    "sample_limit": 500,
                     "scheme": "https",
                     "metrics_path": "/metrics",
                     "authorization": {"credentials_file": "/config/metrics.token"},
                     "tls_config": {"ca_file": "/config/target.crt", "server_name": "localhost"},
                     "static_configs": [{"targets": [f"{host}:{urlsplit(c.target).port}"]}],
-                }
+                },
+                {
+                    "job_name": "sre-loki-policy",
+                    "scheme": "https",
+                    "metrics_path": "/metrics",
+                    "authorization": {"credentials_file": "/config/loki-read.token"},
+                    "tls_config": {"ca_file": "/config/gateway.crt", "server_name": "localhost"},
+                    "static_configs": [{"targets": [f"{host}:{p['loki_tls']}"]}],
+                },
             ],
         },
         "loki": {
@@ -273,7 +288,16 @@ def configurations(c: Config) -> dict[str, Any]:
                     }
                 ]
             },
-            "limits_config": {"max_query_lookback": "24h", "reject_old_samples_max_age": "24h"},
+            "limits_config": {
+                "max_query_lookback": "24h",
+                "reject_old_samples_max_age": "24h",
+                "retention_period": "24h",
+            },
+            "compactor": {
+                "working_directory": "/data/compactor",
+                "retention_enabled": True,
+                "delete_request_store": "filesystem",
+            },
             "analytics": {"reporting_enabled": False},
         },
         "tempo": {

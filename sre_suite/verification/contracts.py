@@ -22,6 +22,7 @@ CORE = {
     "PROMQL-006",
     "PROMQL-009",
 }
+HEALTH_CHECKS = {"TRACES-039", "LOGS-034", "LOGS-036"}
 BACKENDS = {"traces": "tempo", "logs": "loki", "promql": "prometheus"}
 
 
@@ -141,7 +142,9 @@ class VerificationPolicy:
                     raise ValueError("invalid not-applicable rule")
                 parameters = {}
             else:
-                if name not in by_id or by_id[name].profile.backend != BACKENDS[check.category]:
+                if name not in by_id or by_id[name].profile.backend != (
+                    "prometheus" if check.id in HEALTH_CHECKS else BACKENDS[check.category]
+                ):
                     raise ValueError("check requires matching reviewed source backend")
                 parameters = validate(str(check.assertion).removesuffix(".v1"), row["parameters"])
             rules.append(

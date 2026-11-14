@@ -64,6 +64,9 @@ def arguments(root: Path, config: Config, backend: str) -> list[str]:
         mounts += [
             (root / "target.crt", "/config/target.crt", True),
             (root / "metrics.token", "/config/metrics.token", True),
+            (root / "loki-read.token", "/config/loki-read.token", True),
+            (root / "server.crt", "/config/gateway.crt", True),
+            (root / "recording.json", "/config/recording.json", True),
         ]
     for source, destination, readonly in mounts:
         if "," in str(source):

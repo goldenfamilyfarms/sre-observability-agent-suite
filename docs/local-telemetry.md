@@ -69,7 +69,7 @@ python -m sre_suite.local_telemetry stop \
   --directory /absolute/private/telemetry --authorize-stop
 ```
 
-`stop` refuses an actively locked supervisor. Stop that foreground process first. No command removes retained data. Repeated `up` uses the same private bind mounts and refuses to adopt running or unrelated containers. Prometheus retains up to 24 hours/256 MB; Tempo block retention is 24 hours. Loki's 24-hour query/ingestion limits are not a disk retention policy. Use bounded pilot runs, monitor available disk and deliberately retire the private bundle after evidence retention requirements are met.
+`stop` refuses an actively locked supervisor. Stop that foreground process first. No command removes retained data. Repeated `up` uses the same private bind mounts and refuses to adopt running or unrelated containers. Prometheus retains up to 24 hours/256 MB; Tempo block retention is 24 hours. Version 0.23 also enables Loki's 24-hour compactor retention with a filesystem delete-request store. The authenticated retention probe checks effective configuration; a short test does not demonstrate elapsed deletion. Existing bundles require explicit regeneration; see [migration details](demo-instrumentation.md). Use bounded pilot runs, monitor available disk and deliberately retire the private bundle after evidence retention requirements are met.
 
 ## Trust boundary and acceptance
 

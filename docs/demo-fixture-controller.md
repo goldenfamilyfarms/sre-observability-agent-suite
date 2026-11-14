@@ -6,7 +6,7 @@ The demo exercises six request-handler cases: health, an unknown route, an unsup
 
 The [complete 120-slot mapping](demo-fixture-checks.md) leaves **76 checks applicable** and marks **44 checks not applicable** for genuinely absent features (gRPC, database, cache, messaging, outbound HTTP, async propagation, retry/timeout/cancellation and JVM). The assessor verifies the capability-manifest fingerprint from a live probe before accepting those exclusions. This mapping is specific to the pinned Python demo. It cannot be reused as a general service exemption list.
 
-A completed fixture assessment is not a passing certification. Scrape health, process/exporter health, retention, SLO calculations and all other applicable concerns still require independently collected, correctly mapped backend evidence. The demo does not invent those observations, install scrape targets/recording rules, configure retention, or manufacture 120 passing records. The private verification policy must select the appropriate actual fields and queries; credentials alone do not supply that policy.
+A completed fixture assessment is not a passing certification. Scrape health, process/exporter health, retention, SLO calculations and all other applicable concerns still require independently collected, correctly mapped backend evidence. The controller does not invent backend observations. Version 0.23 adds measured instrumentation and a separately configured local backend stack with reviewed recording rules and retention; see [the instrumentation guide](demo-instrumentation.md). The private verification policy must select the appropriate actual fields and queries; credentials alone do not supply that policy.
 
 ## Prepare offline
 

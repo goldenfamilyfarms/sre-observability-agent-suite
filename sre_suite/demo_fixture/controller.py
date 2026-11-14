@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sqlite3
+import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -30,6 +31,10 @@ CREATE TABLE IF NOT EXISTS executions (key TEXT PRIMARY KEY, command TEXT NOT NU
  response TEXT NOT NULL, events TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS outbox (key TEXT NOT NULL, signal TEXT NOT NULL,
  payload TEXT NOT NULL, delivered INTEGER NOT NULL DEFAULT 0 CHECK(delivered IN (0,1)),
+ PRIMARY KEY(key, signal));
+CREATE TABLE IF NOT EXISTS delivery (
+ key TEXT NOT NULL, signal TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
+ failures INTEGER NOT NULL DEFAULT 0, acknowledged_ns INTEGER,
  PRIMARY KEY(key, signal));
 """
 
@@ -95,6 +100,7 @@ class Controller:
             os.close(fd)
         private_path(self.path, directory=False)
         self.evidence, self.clock = evidence, clock
+        self.process_started = time.monotonic()
         self.trace_id = next(s.trace_id for s in policy.verification.sources if s.trace_id)
         identity = canonical(
             {
@@ -329,6 +335,7 @@ class Controller:
                                 {
                                     "exception.type": event["exception_type"],
                                     "exception.message": event["exception_message"],
+                                    "exception.stacktrace": canonical(event["exception_stack"]),
                                 }
                             ),
                         }
@@ -356,7 +363,7 @@ class Controller:
         )
 
     def metrics(self) -> str:
-        self.guard()
+        now = self.guard()
         with self.connect() as conn:
             events = [
                 event
@@ -364,6 +371,11 @@ class Controller:
                 for event in json.loads(raw)
             ]
             pending = conn.execute("SELECT COUNT(*) FROM outbox WHERE delivered=0").fetchone()[0]
+            deliveries = conn.execute(
+                "SELECT signal,SUM(attempts),SUM(failures),MAX(acknowledged_ns) "
+                "FROM delivery GROUP BY signal"
+            ).fetchall()
+            outbox = conn.execute("SELECT signal,payload,delivered FROM outbox").fetchall()
         labels = ",".join(
             k + "=" + json.dumps(v, ensure_ascii=False)
             for k, v in sorted(self.labels_for("prometheus").items())
@@ -387,4 +399,39 @@ class Controller:
             lines.append(f"sre_demo_request_duration_seconds_sum{{{common}}} {sum(durations)}")
             lines.append(f"sre_demo_request_duration_seconds_count{{{common}}} {len(durations)}")
         lines.append(f"sre_demo_outbox_pending{{{labels}}} {pending}")
+        from .instrumentation import process_metrics
+
+        measurements = {
+            "sre_demo_target_info": 1,
+            "sre_demo_observation_seconds": (now - self.request.start).total_seconds(),
+            "sre_demo_errors_total": sum(r["body"]["status"] >= 500 for r in events),
+            **process_metrics(self.process_started),
+        }
+        for name, value in measurements.items():
+            lines.append(f"{name}{{{labels}}} {value}")
+        lines.append(f'sre_demo_duration_unit_info{{{labels},unit="seconds"}} 1')
+        for signal, attempts, failures, acknowledged in deliveries:
+            common = labels + ",signal=" + json.dumps(signal)
+            lines.extend(
+                [
+                    f"sre_demo_export_attempts_total{{{common}}} {attempts}",
+                    f"sre_demo_export_failures_total{{{common}}} {failures}",
+                ]
+            )
+            # Missing acknowledgement stays absent, never represented as zero latency.
+            if acknowledged is not None and events:
+                latency = (acknowledged - min(r["end_ns"] for r in events)) / 1e9
+                lines.append(f"sre_demo_export_ack_latency_seconds{{{common}}} {latency}")
+        # Audit durable payload contents against committed events; no silent discard path.
+        for signal, payload, delivered in outbox:
+            raw = json.loads(payload)
+            actual = (
+                sum(len(g["spans"]) for r in raw["resourceSpans"] for g in r["scopeSpans"])
+                if signal == "traces"
+                else sum(len(r["values"]) for r in raw["streams"])
+            )
+            intended = len(events) + 1 if signal == "traces" else len(events)
+            common = labels + ",signal=" + json.dumps(signal)
+            lines.append(f"sre_demo_outbox_missing_items{{{common}}} {max(0, intended - actual)}")
+            lines.append(f"sre_demo_export_acknowledged{{{common}}} {delivered}")
         return "\n".join(lines) + "\n"

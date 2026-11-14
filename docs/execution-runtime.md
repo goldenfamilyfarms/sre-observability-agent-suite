@@ -127,3 +127,5 @@ Use [pilot-setup](pilot-setup.md) to register an explicitly authorized generatio
 ### Local service startup
 
 The [local pilot package](local-pilot.md) supplies PostgreSQL, migrations, a persistent Temporal development server, local HTTPS evidence hosting and optional worker startup. It keeps workflow execution separate and preserves existing preview-generation guards.
+
+For optional candidate-bound Prometheus/Loki/Tempo observations, follow the [engineering telemetry guide](engineering-telemetry.md). This requires a separate telemetry worker and independently authorized preview setup; it does not grant deployment permission.

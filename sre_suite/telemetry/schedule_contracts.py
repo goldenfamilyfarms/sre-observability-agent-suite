@@ -18,6 +18,10 @@ def policy_digest(policy: QueryPolicy) -> str:
         {**asdict(p), "scope_labels": dict(p.scope_labels)}
         for p in sorted(policy.profiles, key=lambda p: p.id)
     ]
+    for profile in raw["profiles"]:
+        labels = profile.pop("binding_labels")
+        if labels:
+            profile["binding_labels"] = dict(labels)
     return digest(raw)
 
 

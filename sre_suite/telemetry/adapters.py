@@ -83,7 +83,7 @@ def scoped_labels(
 ) -> tuple[tuple[str, str], ...]:
     result = labels(value)
     actual = dict(result)
-    if any(actual.get(k) != v for k, v in profile.bindings(request.scope).items()):
+    if any(actual.get(k) != v for k, v in profile.bindings(request.scope, request.binding).items()):
         raise TelemetryError("response_scope_mismatch")
     return result
 
@@ -255,7 +255,7 @@ class TelemetryAdapter:
             raise TelemetryError("profile_mismatch")
         if request.trace_id is not None and not profile.allow_full_traces:
             raise TelemetryError("full_trace_not_authorized")
-        query = profile.query(request.scope)
+        query = profile.query(request.scope, request.binding)
         params: dict[str, str | int] = {"query": query, "limit": request.limit}
         if profile.backend == Backend.PROMETHEUS:
             path = "/api/v1/query_range"

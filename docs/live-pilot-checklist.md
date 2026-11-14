@@ -176,3 +176,5 @@ Restart the same local stack/worker for interrupted work only while its scope, g
 Use `cancel WORKFLOW_ID` through the local wrapper when needed, then inspect external state. Ctrl-C stops the worker/services and preserves PostgreSQL volume, Temporal state and journal. No command here merges, deploys, promotes, deletes the demo repository or silently cleans up external work.
 
 For planner-created issues, use the [guarded handoff](planning-handoff.md) instead of manually changing a bootstrap execution spec or reusing its workflow ID.
+
+For optional candidate-bound Prometheus/Loki/Tempo observations, follow the [engineering telemetry guide](engineering-telemetry.md). This requires a separate telemetry worker and independently authorized preview setup; it does not grant deployment permission.

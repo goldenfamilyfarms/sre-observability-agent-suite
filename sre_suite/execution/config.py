@@ -125,6 +125,7 @@ class Settings:
     github_base: str = "main"
     jira_transitions: tuple[TransitionRule, ...] = ()
     evidence_ca_file: str | None = None
+    telemetry_config: str | None = None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> "Settings":
@@ -212,6 +213,7 @@ class Settings:
             github_base,
             rules,
             env.get("SRE_EVIDENCE_CA_FILE") or None,
+            env.get("SRE_ENGINEERING_TELEMETRY_CONFIG") or None,
         )
 
 

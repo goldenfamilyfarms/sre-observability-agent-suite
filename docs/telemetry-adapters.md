@@ -1,6 +1,6 @@
 # Scoped telemetry collection
 
-Version 0.13 implements Prometheus range queries with float matrix results, Loki log-range queries with structured metadata, and Tempo TraceQL search summaries. `TelemetryCollector` is the supported scoped entry point; `TelemetryAdapter` is the lower-level protocol client for trusted callers. Neither returns a gate verdict or starts a workflow. Version 0.14 adds [full trace fetching and a separate finite Temporal collection workflow](telemetry-scheduling.md); the engineering workflow does not start it implicitly.
+Version 0.13 implements Prometheus range queries with float matrix results, Loki log-range queries with structured metadata, and Tempo TraceQL search summaries. `TelemetryCollector` is the supported scoped entry point; `TelemetryAdapter` is the lower-level protocol client for trusted callers. Neither returns a gate verdict or starts a workflow. Version 0.14 adds [full trace fetching and a separate finite Temporal collection workflow](telemetry-scheduling.md); version 0.15 adds [explicitly configured engineering child collection](engineering-telemetry.md).
 
 ## Private setup
 

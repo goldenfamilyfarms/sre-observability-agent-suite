@@ -1,15 +1,16 @@
 """Private per-occurrence capture journal and retry-safe authenticated evidence publication."""
 
 import hashlib
+import json
 from dataclasses import asdict
 from datetime import datetime, timedelta
 from typing import Any
 
 from ..api_wire import decode, fields, text
 from ..execution.journal import Journal
-from ..execution.wire import digest
+from ..execution.wire import canonical, digest
 from .collector import TelemetryCollector
-from .contracts import integer
+from .contracts import integer, profile_document, request_document
 from .schedule_contracts import TelemetrySchedule
 
 
@@ -36,9 +37,9 @@ class ScheduledRuntime:
         content = text(saved["content"], 900_000).encode()
         document = decode(content)
         if not isinstance(document, dict) or (
-            digest(document.get("request")) != digest(asdict(request))
+            digest(document.get("request")) != digest(request_document(request))
             or digest(document.get("profile"))
-            != digest(asdict(self.collector.policy.resolve(request)))
+            != digest(profile_document(self.collector.policy.resolve(request)))
             or document.get("certification_verdict") is not None
         ):
             raise ValueError("saved observation does not match this schedule")
@@ -61,12 +62,14 @@ class ScheduledRuntime:
             "partial",
         }:
             raise ValueError("invalid saved result")
-        receipt = {
+        receipt: dict[str, Any] = {
             "slot": slot,
             "status": result["status"],
             "evidence_id": evidence.id,
             "evidence_sha256": evidence.sha256,
         }
+        if request.binding is not None:
+            receipt["evidence"] = json.loads(canonical(asdict(evidence)))
         self.journal.compute(key + ":receipt", {"content_sha256": evidence.sha256}, lambda: receipt)
         # Only compact references enter Temporal history. Query/trace bodies stay private.
         return receipt

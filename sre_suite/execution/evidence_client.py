@@ -46,6 +46,9 @@ class EvidenceClient:
         return result
 
     def verify(self, evidence: Evidence) -> None:
+        self.read(evidence)
+
+    def read(self, evidence: Evidence) -> bytes:
         result = self.http.call(
             "POST", "/v1/evidence/read", {"schema_version": 2, "evidence": asdict(evidence)}
         )
@@ -55,11 +58,10 @@ class EvidenceClient:
 
         from ..api_wire import content_from_wire
 
-        if (
-            hashlib.sha256(content_from_wire(result.get("content_base64"))).hexdigest()
-            != evidence.sha256
-        ):
+        content = content_from_wire(result.get("content_base64"))
+        if hashlib.sha256(content).hexdigest() != evidence.sha256:
             raise ValueError("evidence response digest mismatch")
+        return content
 
     def upload(
         self, key: str, scope: Scope, content: bytes, observed: datetime, expires: datetime

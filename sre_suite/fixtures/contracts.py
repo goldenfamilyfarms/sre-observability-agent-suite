@@ -68,6 +68,7 @@ class FixturePolicy:
     scenarios: tuple[Scenario, ...]
     checks: dict[str, Any]
     fingerprint: str
+    journeys: dict[str, Any] | None = None
 
     @property
     def dispatch(self) -> dict[str, Any]:
@@ -89,7 +90,8 @@ class FixturePolicy:
                 "assessor_queue",
                 "scenarios",
                 "checks",
-            },
+            }
+            | ({"journeys"} if isinstance(value, dict) and "journeys" in value else set()),
         )
         policy = VerificationPolicy.parse(row["verification_policy"])
         runner = text(row["runner"], 128)
@@ -181,6 +183,11 @@ class FixturePolicy:
                                 raise ValueError("invalid expected trace link")
         if used != names:
             raise ValueError("unmapped scenarios are not authorized")
+        journeys = None
+        if "journeys" in row:
+            from .journeys import validate as validate_journeys
+
+            journeys = validate_journeys(row["journeys"], {s.path for s in scenarios})
         return cls(
             policy,
             runner,
@@ -192,6 +199,7 @@ class FixturePolicy:
             tuple(scenarios),
             dict(checks),
             digest(row),
+            journeys,
         )
 
 
@@ -224,7 +232,7 @@ class FixtureRequest:
         scope = scope_from_dict(release["scope"])
         if (
             release["required_gates"] != ["certification"]
-            or plan["artifact_kind"] != "source-candidate-v1"
+            or plan["artifact_kind"] not in {"source-candidate-v1", "container-image-v1"}
             or scope.environment == Environment.PRODUCTION
         ):
             raise ValueError("unsupported fixture release")

@@ -19,6 +19,7 @@ from .evidence_client import EvidenceClient
 from .github import GitHubClient
 from .jira import JiraClient
 from .journal import Journal
+from .roles import RolePolicy
 from .telemetry import EngineeringTelemetry
 from .wire import canonical, digest, ticket_from_wire, ticket_json
 from .workspace import ContainerTests, make_patch, selected_source
@@ -59,6 +60,17 @@ class ExecutionRuntime:
         self.tests = tests or ContainerTests(settings)
         self.journal = Journal(settings.work_root)
         self.clock = clock
+        self.roles = RolePolicy.load(Path(settings.roles_config)) if settings.roles_config else None
+        if (self.roles is None) != (settings.worker_role is None):
+            raise ValueError("configure role policy and worker role together")
+        if self.roles:
+            self.roles.require(settings.worker_role, str(settings.worker_role))
+            if settings.worker_role not in self.roles.bindings:
+                raise ValueError("unknown worker role")
+            if settings.worker_role != "controller" and (
+                settings.jira_writes or settings.github_prs or settings.jira_transitions
+            ):
+                raise ValueError("stage workers cannot receive publication authority")
         self.telemetry = (
             EngineeringTelemetry(Path(settings.telemetry_config))
             if settings.telemetry_config
@@ -94,17 +106,21 @@ class ExecutionRuntime:
                 "model": settings.claude_model,
                 "timeout": settings.timeout,
                 "budget": settings.budget_usd,
+                **({"roles": self.roles.fingerprint} if self.roles else {}),
                 "publication_version": 1,
-                "github_prs": settings.github_prs,
+                "github_prs": settings.github_prs if not self.roles else "controller-only",
                 "github_base": settings.github_base,
-                "jira_writes": settings.jira_writes,
-                "jira_transitions": [asdict(rule) for rule in settings.jira_transitions],
+                "jira_writes": settings.jira_writes if not self.roles else "controller-only",
+                "jira_transitions": [asdict(rule) for rule in settings.jira_transitions]
+                if not self.roles
+                else "controller-only",
             }
         )
 
     def prepare(
         self, spec: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
+        self.require_role("controller")
         key = execution_key(spec)
         if self.telemetry and self.telemetry.policy.scope != scope_from_dict(spec["scope"]):
             raise ValueError("telemetry policy differs from execution scope")
@@ -124,10 +140,13 @@ class ExecutionRuntime:
                 "source": source,
                 "spec": spec,
                 "policy": self.policy,
+                **({"controller_policy": self.controller_policy()} if self.roles else {}),
             }
 
         manifest = self.journal.compute(key + ":manifest", spec, load, heartbeat)
         reference: dict[str, Any] = {"key": key, "manifest": digest(manifest)}
+        if self.roles:
+            reference["role_dispatch"] = self.roles.dispatch()
         if self.telemetry:
             reference["telemetry_required"] = True
         if self.certification:
@@ -150,10 +169,31 @@ class ExecutionRuntime:
                 )
         return reference
 
+    def controller_policy(self) -> str:
+        return digest(
+            {
+                "github_prs": self.settings.github_prs,
+                "jira_writes": self.settings.jira_writes,
+                "jira_transitions": [asdict(r) for r in self.settings.jira_transitions],
+            }
+        )
+
+    def require_role(self, operation: str) -> None:
+        if self.roles:
+            self.roles.require(self.settings.worker_role, operation)
+
     def _guard(self, reference: dict[str, Any], heartbeat: Callable[[], None]) -> dict[str, Any]:
         manifest = self.journal.read(reference["key"] + ":manifest", reference["manifest"])
         if manifest["policy"] != self.policy or execution_key(manifest["spec"]) != reference["key"]:
             raise ValueError("execution policy or identity changed")
+        if self.roles:
+            self.roles.current()
+            if reference.get("role_dispatch") != self.roles.dispatch():
+                raise ValueError("role dispatch changed")
+            if self.settings.worker_role == "controller" and (
+                manifest["controller_policy"] != self.controller_policy()
+            ):
+                raise ValueError("controller publication policy changed")
         ticket = ticket_from_wire(manifest["ticket"])
         heartbeat()
         if self.jira.get_ticket(ticket.key, heartbeat) != ticket:
@@ -191,6 +231,12 @@ class ExecutionRuntime:
                 or evidence.expires_at != datetime.fromisoformat(value["expires_at"])
             ):
                 raise ValueError("stage evidence does not attest the saved artifact")
+            if self.roles:
+                self.roles.attest(result["role"], evidence)
+                if value.get("prior_evidence_sha256") != [
+                    r["evidence"]["sha256"] for r in results[:index]
+                ]:
+                    raise ValueError("stage does not attest the preceding artifacts")
             self.evidence.verify(evidence)
             loaded.append(value)
         return loaded
@@ -199,6 +245,7 @@ class ExecutionRuntime:
         self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
         reference, role, results = arguments["reference"], arguments["role"], arguments["results"]
+        self.require_role(role)
         manifest = self._guard(reference, heartbeat)
         prior = self._results(reference, results, heartbeat)
         if (
@@ -243,6 +290,8 @@ class ExecutionRuntime:
                     now + timedelta(hours=1), *(e.expires_at for e in ticket.evidence)
                 ).isoformat(),
             )
+            if self.roles:
+                result["prior_evidence_sha256"] = [r["evidence"]["sha256"] for r in results]
             return result
 
         key = reference["key"] + ":" + role
@@ -257,6 +306,8 @@ class ExecutionRuntime:
             datetime.fromisoformat(result["observed_at"]),
             datetime.fromisoformat(result["expires_at"]),
         )
+        if self.roles:
+            self.roles.attest(role, evidence)
         return {
             "role": role,
             "verdict": result["verdict"],
@@ -267,6 +318,7 @@ class ExecutionRuntime:
     def prepare_telemetry(
         self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
+        self.require_role("controller")
         if self.telemetry is None:
             raise ValueError("engineering telemetry is not authorized")
         return self.telemetry.prepare(self, arguments, heartbeat)
@@ -274,6 +326,7 @@ class ExecutionRuntime:
     def prepare_certification(
         self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
+        self.require_role("controller")
         if self.certification is None:
             raise ValueError("engineering certification is not authorized")
         return self.certification.plan(self, arguments, heartbeat)
@@ -281,6 +334,7 @@ class ExecutionRuntime:
     def bind_certification(
         self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
+        self.require_role("controller")
         if self.certification is None:
             raise ValueError("engineering certification is not authorized")
         return self.certification.bind(self, arguments, heartbeat)
@@ -288,6 +342,7 @@ class ExecutionRuntime:
     def finish(
         self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
+        self.require_role("controller")
         with self.journal.locked(arguments["reference"]["key"] + ":publication", heartbeat):
             return self._finish(arguments, heartbeat)
 

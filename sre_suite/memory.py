@@ -29,6 +29,9 @@ class FindingState(StrEnum):
     PROPOSED = "proposed"
     VERIFIED = "verified"
     DISPUTED = "disputed"
+    CORROBORATED = "corroborated"
+    STALE = "stale"
+    SUPERSEDED = "superseded"
 
 
 @dataclass(frozen=True)

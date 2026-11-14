@@ -29,3 +29,4 @@
 | [025](025-local-full-certification.md) | Local-stack wiring and full certification workflow acceptance | Accepted for the source-candidate engineering pilot |
 | [026](026-measured-demo-certification.md) | Measured demo instrumentation and infrastructure health evidence | Accepted for the local pilot |
 | [027](027-intake-assessment-planning.md) | Pinned source discovery, independent assessment and guarded planning | Accepted for bounded non-production discovery |
+| [028](028-governed-suite-agents.md) | Authenticated agent roles, suite orchestration, shipping and deployment controls | Implemented for bounded v1; live acceptance pending |

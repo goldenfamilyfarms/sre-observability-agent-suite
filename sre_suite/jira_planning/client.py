@@ -8,13 +8,15 @@ import tempfile
 import time
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 
 from ..api_wire import decode
+from ..control.client import ControlClient
+from ..control.contracts import Binding
 from ..execution.config import flag, https_url, required
 from ..execution.evidence_client import EvidenceClient
 from ..execution.http import JsonHttp
@@ -43,6 +45,8 @@ class Config:
     enabled: bool
     intake_subject: str | None = None
     assessor_subject: str | None = None
+    authenticated_approval: bool = False
+    parent_key: str | None = None
 
     @classmethod
     def load(cls, env: Mapping[str, str]) -> "Config":
@@ -55,6 +59,8 @@ class Config:
             flag(env, "SRE_JIRA_PLANNING_WRITES_ENABLED"),
             env.get("SRE_INTAKE_SUBJECT"),
             env.get("SRE_ASSESSMENT_SUBJECT"),
+            flag(env, "SRE_REQUIRE_AUTHENTICATED_APPROVALS"),
+            env.get("SRE_JIRA_PARENT_KEY"),
         )
         if (
             not re.fullmatch(r"https://[A-Za-z0-9.-]+", result.url)
@@ -73,6 +79,10 @@ class Config:
             )
         ):
             raise ValueError("configure distinct discovery identities together")
+        if result.parent_key is not None and not re.fullmatch(
+            re.escape(result.project) + r"-[1-9][0-9]*", result.parent_key
+        ):
+            raise ValueError("parent epic must be in the configured project")
         return result
 
     def identity(self) -> dict[str, str]:
@@ -82,6 +92,8 @@ class Config:
             "repository": self.repository,
             "issue_type": self.issue_type,
             "contract_field": self.contract_field,
+            **({"parent_key": self.parent_key} if self.parent_key is not None else {}),
+            **({"approval_mode": "authenticated"} if self.authenticated_approval else {}),
             **(
                 {"intake_subject": self.intake_subject, "assessor_subject": self.assessor_subject}
                 if self.intake_subject is not None and self.assessor_subject is not None
@@ -137,8 +149,10 @@ class Planner:
         http: JsonHttp,
         evidence: EvidenceClient | None,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+        control: ControlClient | None = None,
     ) -> None:
         self.config, self.http, self.evidence, self.clock = config, http, evidence, clock
+        self.control = control
 
     @classmethod
     def from_env(cls, env: Mapping[str, str], *, discovery_only: bool = False) -> "Planner":
@@ -156,6 +170,15 @@ class Planner:
                 required(env, "SRE_EVIDENCE_API_TOKEN"),
                 local_ca_file=env.get("SRE_EVIDENCE_CA_FILE"),
             ),
+            control=ControlClient(
+                JsonHttp(
+                    required(env, "SRE_CONTROL_URL"),
+                    "Bearer " + required(env, "SRE_CONTROL_TOKEN"),
+                    local_ca_file=env.get("SRE_CONTROL_CA_FILE"),
+                )
+            )
+            if config.authenticated_approval and not discovery_only
+            else None,
         )
 
     def pages(self, path: str, field: str) -> list[dict[str, Any]]:
@@ -217,8 +240,14 @@ class Planner:
             or not {"project", "issuetype", "summary", "labels", c.contract_field} <= fields.keys()
         ):
             raise ValueError("required create fields unavailable")
+        if c.parent_key is not None and (
+            "parent" not in fields or "set" not in fields["parent"].get("operations", [])
+        ):
+            raise ValueError("Jira parent field unavailable")
         for name, item in fields.items():
-            if item.get("required") is True and name not in {"project", "issuetype", "summary"}:
+            if item.get("required") is True and name not in (
+                {"project", "issuetype", "summary"} | ({"parent"} if c.parent_key else set())
+            ):
                 raise ValueError("unsupported required create field")
         for name in ("summary", "labels", c.contract_field):
             if "set" not in fields[name].get("operations", []):
@@ -241,6 +270,19 @@ class Planner:
         if plan.project != self.config.project or plan.repository != self.config.repository:
             raise ValueError("plan outside configured project/repository")
         context = self.evidence.context(plan.scope, version)
+        if self.config.parent_key:
+            parent = obj(
+                self.http.call(
+                    "GET",
+                    "/rest/api/3/issue/" + self.config.parent_key + "?fields=project,issuetype",
+                )
+            )
+            if (
+                parent.get("key") != self.config.parent_key
+                or obj(obj(parent.get("fields")).get("project")).get("key") != self.config.project
+                or obj(obj(parent.get("fields")).get("issuetype")).get("hierarchyLevel") != 1
+            ):
+                raise ValueError("parent epic identity or hierarchy differs")
         if plan.discovery is not None:
             from ..discovery.provenance import draft, validate_origin
 
@@ -262,6 +304,34 @@ class Planner:
         # Recheck after potentially many evidence reads.
         return int(self.evidence.context(plan.scope, context["version"])["version"])
 
+    def authorization(self, plan: Plan, version: int) -> Binding:
+        source = (
+            plan.discovery.request.source_artifact_digest
+            if plan.discovery
+            else "sha256:"
+            + digest(
+                {
+                    "repository": plan.repository,
+                    "scope": asdict(plan.scope),
+                    "evidence": [asdict(e) for n in plan.nodes for e in n.template.evidence],
+                }
+            )
+        )
+        return Binding(
+            plan.scope,
+            version,
+            source,
+            "sha256:" + plan.fingerprint,
+            "plan",
+            {**self.config.identity(), "environment": str(plan.scope.environment)},
+        )
+
+    def require_authorization(self, plan: Plan, version: int) -> None:
+        if self.config.authenticated_approval:
+            if self.control is None:
+                raise ValueError("authenticated approval service required")
+            self.control.require_approval(self.authorization(plan, version))
+
     def approval(self, plan: Plan) -> str:
         return digest({"target": self.config.identity(), "plan": plan.json()})
 
@@ -281,6 +351,11 @@ class Planner:
         return {
             "schema_version": 2,
             "read_only": True,
+            **(
+                {"authorization": self.authorization(plan, version).wire()}
+                if self.config.authenticated_approval
+                else {}
+            ),
             "approval_digest": self.approval(plan),
             "context_version": version,
             "target": self.config.identity(),
@@ -334,7 +409,7 @@ class Planner:
         issue = obj(
             self.http.call(
                 "GET",
-                f"/rest/api/3/issue/{key}?fields=project,issuetype,summary,labels,status,{field}",
+                f"/rest/api/3/issue/{key}?fields=project,issuetype,summary,labels,status,parent,{field}",
             )
         )
         fields = obj(issue.get("fields"))
@@ -343,6 +418,10 @@ class Planner:
             issue.get("key") != key
             or obj(fields.get("project")).get("key") != plan.project
             or obj(fields.get("issuetype")).get("id") != self.config.issue_type
+            or (
+                self.config.parent_key is not None
+                and obj(fields.get("parent")).get("key") != self.config.parent_key
+            )
             or fields.get("summary") != node.summary
             or fields.get("labels") != [self.label(plan, node)]
             or obj(obj(fields.get("status")).get("statusCategory")).get("key")
@@ -384,6 +463,7 @@ class Planner:
 
             def guard() -> None:
                 self.guard(plan, state["context_version"])
+                self.require_authorization(plan, state["context_version"])
 
             guard()
             for node in plan.order():
@@ -416,6 +496,11 @@ class Planner:
                                         "project": {"key": plan.project},
                                         "issuetype": {"id": self.config.issue_type},
                                         "summary": node.summary,
+                                        **(
+                                            {"parent": {"key": self.config.parent_key}}
+                                            if self.config.parent_key is not None
+                                            else {}
+                                        ),
                                         "labels": [self.label(plan, node)],
                                     },
                                     "properties": [

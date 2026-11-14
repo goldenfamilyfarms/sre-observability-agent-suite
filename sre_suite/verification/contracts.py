@@ -206,8 +206,8 @@ class VerificationInput:
             text(row["plan_digest"]),
             tuple(text(v, 128) for v in gates),
         )
-        if raw["artifact_kind"] != "source-candidate-v1":
-            raise ValueError("only source-candidate provenance is currently implemented")
+        if raw["artifact_kind"] not in {"source-candidate-v1", "container-image-v1"}:
+            raise ValueError("unsupported certification artifact kind")
         start, end = (
             datetime.fromisoformat(text(raw[name])) for name in ("window_start", "window_end")
         )

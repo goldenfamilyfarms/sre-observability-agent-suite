@@ -120,7 +120,7 @@ def credential_payload(manifest: PilotManifest, controller: str, worker: str) ->
     return {"schema_version": 2, "credentials": credentials}
 
 
-def load_credentials(path: Path) -> tuple[Credential, ...]:
+def load_credentials(path: Path, *, allow_production: bool = False) -> tuple[Credential, ...]:
     raw = envelope(private_json(path), {"credentials"})
     items = raw["credentials"]
     if not isinstance(items, list) or not 0 <= len(items) <= 100:
@@ -137,7 +137,7 @@ def load_credentials(path: Path) -> tuple[Credential, ...]:
         for grant in grants:
             row = fields(grant, {"scope", "action"})
             scope = scope_from_dict(row["scope"])
-            if scope.environment.value == "production":
+            if scope.environment.value == "production" and not allow_production:
                 raise ValueError("local pilot cannot authorize production")
             decoded.append(Grant(scope, Action(text(row["action"]))))
         credentials.append(

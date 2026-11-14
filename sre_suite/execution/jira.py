@@ -9,6 +9,7 @@ from ..api_wire import decode
 from ..contracts import JiraExecutionTicket
 from .config import Settings
 from .http import JsonHttp, RemoteError
+from .jira_text import plain
 from .wire import digest, ticket_envelope
 
 
@@ -32,9 +33,9 @@ class JiraClient:
         if not isinstance(response, dict) or response.get("key") != key:
             raise ValueError("Jira issue identity mismatch")
         raw_fields = response.get("fields")
-        if not isinstance(raw_fields, dict) or not isinstance(raw_fields.get(field_name), str):
+        if not isinstance(raw_fields, dict):
             raise ValueError("Jira contract field must contain a JSON text envelope")
-        ticket = ticket_envelope(decode(raw_fields[field_name].encode()))
+        ticket = ticket_envelope(decode(plain(raw_fields.get(field_name)).encode()))
         if ticket.key != key or ticket.repository != self.settings.repository:
             raise ValueError("ticket key or repository is not authorized")
         for dependency in ticket.dependencies:

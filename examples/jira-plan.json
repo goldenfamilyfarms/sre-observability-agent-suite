@@ -1,0 +1,105 @@
+{
+  "schema_version": 2,
+  "id": "synthetic-plan-001",
+  "project": "DEMO",
+  "repository": "example/demo-service",
+  "scope": {
+    "environment": "development",
+    "environment_id": "preview-r1-pr1",
+    "generation": 1,
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "service": "demo-service"
+  },
+  "nodes": [
+    {
+      "id": "instrumentation",
+      "summary": "Add synthetic request correlation",
+      "depends_on": [],
+      "requirements": {
+        "acceptance_criteria": [
+          "request logs include trace identifiers"
+        ],
+        "current_state": "missing correlation",
+        "delivery_requirements": [
+          "open a reviewable PR"
+        ],
+        "desired_state": "correlated logs",
+        "evidence": [
+          {
+            "expires_at": "2026-11-07 19:00:00+00:00",
+            "id": "fixture-evidence",
+            "observed_at": "2026-11-07 17:59:00+00:00",
+            "producer": "fixture",
+            "scope": {
+              "environment": "development",
+              "environment_id": "preview-r1-pr1",
+              "generation": 1,
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "service": "demo-service"
+            },
+            "sha256": "9a5b038b289c630fcf58c973340d6f142b1e976b263cce4238c5cbad195b7e7c",
+            "uri": "urn:synthetic:baseline"
+          }
+        ],
+        "implementation_scope": [
+          "request logging"
+        ],
+        "objective": "add correlation to the synthetic service",
+        "qa_requirements": [
+          "test a synthetic request"
+        ],
+        "rollback_strategy": "revert the synthetic change",
+        "telemetry_requirements": [
+          "verify correlation"
+        ],
+        "workstream": "demo"
+      }
+    },
+    {
+      "id": "regression",
+      "summary": "Extend synthetic correlation regression coverage",
+      "depends_on": [
+        "instrumentation"
+      ],
+      "requirements": {
+        "acceptance_criteria": [
+          "request logs include trace identifiers"
+        ],
+        "current_state": "Synthetic correlation changes require an independent regression review.",
+        "delivery_requirements": [
+          "open a reviewable PR"
+        ],
+        "desired_state": "Correlation behavior has reviewed regression coverage.",
+        "evidence": [
+          {
+            "expires_at": "2026-11-07 19:00:00+00:00",
+            "id": "fixture-evidence",
+            "observed_at": "2026-11-07 17:59:00+00:00",
+            "producer": "fixture",
+            "scope": {
+              "environment": "development",
+              "environment_id": "preview-r1-pr1",
+              "generation": 1,
+              "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "service": "demo-service"
+            },
+            "sha256": "9a5b038b289c630fcf58c973340d6f142b1e976b263cce4238c5cbad195b7e7c",
+            "uri": "urn:synthetic:baseline"
+          }
+        ],
+        "implementation_scope": [
+          "request logging"
+        ],
+        "objective": "Review the accepted instrumentation work and propose scoped regression coverage.",
+        "qa_requirements": [
+          "test a synthetic request"
+        ],
+        "rollback_strategy": "revert the synthetic change",
+        "telemetry_requirements": [
+          "verify correlation"
+        ],
+        "workstream": "demo"
+      }
+    }
+  ]
+}

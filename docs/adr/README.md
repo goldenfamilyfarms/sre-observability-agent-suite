@@ -16,3 +16,4 @@
 | [012](012-read-only-preflight.md) | Read-only preflight with explicit unverified capabilities | Accepted for execution pilot |
 | [013](013-pilot-bootstrap.md) | Opt-in controller registration and replayable private pilot setup | Accepted for Phase 1 pilot |
 | [014](014-local-pilot-lifecycle.md) | Explicit loopback services, private credentials and persistent restart | Accepted for local pilot |
+| [015](015-jira-plan-publication.md) | Scoped plan review, durable creation intent and conservative Jira reconciliation | Accepted for planning pilot; live acceptance pending |

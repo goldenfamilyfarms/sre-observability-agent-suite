@@ -36,7 +36,7 @@ python -m sre_suite.execution.cli check-config
 | Variables | Purpose |
 | --- | --- |
 | `SRE_JIRA_BASE_URL`, `SRE_JIRA_EMAIL`, `SRE_JIRA_API_TOKEN` | Jira Cloud HTTPS base URL and Basic email/API-token authentication. URLs must not contain credentials. |
-| `SRE_JIRA_PROJECT`, `SRE_JIRA_CONTRACT_FIELD` | One permitted project and a plain-text `customfield_N` containing the version 2 ticket envelope. |
+| `SRE_JIRA_PROJECT`, `SRE_JIRA_CONTRACT_FIELD` | One permitted project and a `customfield_N` containing the version 2 ticket envelope as a legacy string or plain-text ADF paragraphs. The planning publisher requires a multiline text field. |
 | `SRE_JIRA_DONE_STATUSES` | Comma-separated exact status names accepted for prerequisites; no surrounding spaces. |
 | `SRE_EVIDENCE_API_URL`, `SRE_EVIDENCE_API_TOKEN` | Existing HTTPS evidence/context API and exact-scope service grant with upload, read and context permissions. |
 | `SRE_REPOSITORY`, `SRE_REPO_DIR` | Approved `owner/name` and local checkout containing the ticket's full 40-character commit SHA. |

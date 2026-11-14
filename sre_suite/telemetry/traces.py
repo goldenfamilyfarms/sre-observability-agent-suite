@@ -122,7 +122,8 @@ def full_trace(
         resource = obj(resource_spans.get("resource", {}))
         attrs = attributes(resource.get("attributes", []))
         matches = all(
-            attrs.get(k) == {"stringValue": v} for k, v in profile.bindings(request.scope).items()
+            attrs.get(k) == {"stringValue": v}
+            for k, v in profile.bindings(request.scope, request.binding).items()
         )
         groups = array(alias(resource_spans, "scopeSpans", "instrumentationLibrarySpans"), 100)
         for scope_index, group in enumerate(groups):

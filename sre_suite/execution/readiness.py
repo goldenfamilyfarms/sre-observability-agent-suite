@@ -562,6 +562,10 @@ async def run_preflight(env: Mapping[str, str], spec_path: Path) -> dict[str, An
 
     try:
         settings = Settings.from_env(env)
+        if settings.telemetry_config:
+            from .telemetry import EngineeringTelemetry
+
+            EngineeringTelemetry(Path(settings.telemetry_config))
     except Exception as error:
         required_names: tuple[str, ...] = (
             "SRE_JIRA_BASE_URL",

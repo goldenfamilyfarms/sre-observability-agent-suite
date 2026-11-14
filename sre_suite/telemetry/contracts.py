@@ -46,6 +46,24 @@ def epoch_ns(value: datetime) -> int:
 
 
 @dataclass(frozen=True)
+class CandidateBinding:
+    """Digests of an immutable source recipe and the frozen engineering manifest."""
+
+    artifact_digest: str
+    plan_digest: str
+
+    def __post_init__(self) -> None:
+        for value in (self.artifact_digest, self.plan_digest):
+            if not re.fullmatch(r"sha256:[0-9a-f]{64}", value):
+                raise ValueError("candidate binding requires full SHA-256 digests")
+
+    @classmethod
+    def parse(cls, value: object) -> "CandidateBinding":
+        row = fields(value, {"artifact_digest", "plan_digest"})
+        return cls(text(row["artifact_digest"]), text(row["plan_digest"]))
+
+
+@dataclass(frozen=True)
 class QueryRequest:
     scope: Scope
     profile: str
@@ -54,8 +72,11 @@ class QueryRequest:
     step_seconds: int = 15
     limit: int = 100
     trace_id: str | None = None
+    binding: CandidateBinding | None = None
 
     def __post_init__(self) -> None:
+        if self.binding is not None and not isinstance(self.binding, CandidateBinding):
+            raise ValueError("invalid candidate binding")
         identifier(self.profile)
         aware(self.start)
         aware(self.end)
@@ -80,6 +101,8 @@ class QueryRequest:
         names = {"scope", "profile", "start", "end", "step_seconds", "limit"}
         if isinstance(value, dict) and "trace_id" in value:
             names.add("trace_id")
+        if isinstance(value, dict) and "binding" in value:
+            names.add("binding")
         raw = envelope(value, names)
         return cls(
             scope_from_dict(raw["scope"]),
@@ -89,6 +112,7 @@ class QueryRequest:
             integer(raw["step_seconds"], 1, 3600),
             integer(raw["limit"], 1, 500),
             None if raw.get("trace_id") is None else text(raw["trace_id"], 32),
+            None if raw.get("binding") is None else CandidateBinding.parse(raw["binding"]),
         )
 
 
@@ -102,6 +126,7 @@ class QueryProfile:
     query_template: str
     scope_labels: tuple[tuple[str, str], ...]
     allow_full_traces: bool = False
+    binding_labels: tuple[tuple[str, str], ...] = ()
 
     def __post_init__(self) -> None:
         identifier(self.id)
@@ -134,15 +159,30 @@ class QueryProfile:
             if self.backend == Backend.TEMPO
             else (r"[A-Za-z_][A-Za-z0-9_]{0,127}")
         )
-        if any(not re.fullmatch(pattern, label) for label in labels.values()):
+        binding_labels = dict(self.binding_labels)
+        if self.binding_labels and (
+            len(self.binding_labels) != 2
+            or set(binding_labels) != {"artifact_digest", "plan_digest"}
+            or len(set([*labels.values(), *binding_labels.values()])) != 7
+        ):
+            raise ValueError("candidate digests require two distinct additional mappings")
+        if any(
+            not re.fullmatch(pattern, label)
+            for label in [*labels.values(), *binding_labels.values()]
+        ):
             raise ValueError("invalid telemetry scope mapping")
 
-    def bindings(self, scope: Scope) -> dict[str, str]:
+    def bindings(self, scope: Scope, binding: CandidateBinding | None = None) -> dict[str, str]:
         values = asdict(scope)
-        return {label: str(values[name]) for name, label in self.scope_labels}
+        result = {label: str(values[name]) for name, label in self.scope_labels}
+        if binding is not None:
+            if not self.binding_labels:
+                raise ValueError("profile has no candidate binding mappings")
+            result.update({label: asdict(binding)[name] for name, label in self.binding_labels})
+        return result
 
-    def query(self, scope: Scope) -> str:
-        bindings = self.bindings(scope)
+    def query(self, scope: Scope, binding: CandidateBinding | None = None) -> str:
+        bindings = self.bindings(scope, binding)
         if self.backend == Backend.TEMPO:
             selector = " && ".join(
                 f"resource.{key} = {json.dumps(value)}" for key, value in sorted(bindings.items())
@@ -172,6 +212,7 @@ class QueryPolicy:
             if profile.id == request.profile:
                 if request.trace_id is not None and not profile.allow_full_traces:
                     raise ValueError("full trace fetching is not authorized")
+                profile.bindings(request.scope, request.binding)
                 return profile
         raise ValueError("query profile not authorized")
 
@@ -188,6 +229,8 @@ class QueryPolicy:
                 if isinstance(item, dict) and ("allow_full_traces" in item)
                 else set()
             )
+            if isinstance(item, dict) and "binding_labels" in item:
+                optional.add("binding_labels")
             row = fields(
                 item,
                 {
@@ -202,6 +245,8 @@ class QueryPolicy:
                 | optional,
             )
             labels = fields(row["scope_labels"], set(SCOPE_FIELDS))
+            if "binding_labels" in row and row["binding_labels"] not in ({}, []):
+                fields(row["binding_labels"], {"artifact_digest", "plan_digest"})
             profiles.append(
                 QueryProfile(
                     text(row["id"]),
@@ -212,6 +257,16 @@ class QueryPolicy:
                     text(row["query_template"]),
                     tuple(sorted((k, text(v, 128)) for k, v in labels.items())),
                     boolean(row.get("allow_full_traces", False)),
+                    tuple(
+                        sorted(
+                            (k, text(v, 128))
+                            for k, v in fields(
+                                row["binding_labels"], {"artifact_digest", "plan_digest"}
+                            ).items()
+                        )
+                    )
+                    if row.get("binding_labels")
+                    else (),
                 )
             )
         return cls(scope_from_dict(raw["scope"]), tuple(profiles))
@@ -284,3 +339,20 @@ class QueryResult:
     logs: tuple[LogEntry, ...] = ()
     traces: tuple[TraceSummary, ...] = ()
     full_trace: FullTrace | None = None
+
+
+def request_document(request: QueryRequest) -> dict[str, object]:
+    value = asdict(request)
+    if request.binding is None:
+        value.pop("binding")
+    return value
+
+
+def profile_document(profile: QueryProfile) -> dict[str, object]:
+    value = asdict(profile)
+    if not profile.binding_labels:
+        value.pop("binding_labels")
+    else:
+        value["scope_labels"] = sorted(profile.scope_labels)
+        value["binding_labels"] = sorted(profile.binding_labels)
+    return value

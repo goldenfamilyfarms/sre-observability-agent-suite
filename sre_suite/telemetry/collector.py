@@ -9,7 +9,14 @@ from ..contracts import Evidence
 from ..execution.evidence_client import EvidenceClient
 from ..execution.wire import canonical
 from .adapters import ReadTransport, TelemetryAdapter
-from .contracts import QueryPolicy, QueryProfile, QueryRequest, QueryResult
+from .contracts import (
+    QueryPolicy,
+    QueryProfile,
+    QueryRequest,
+    QueryResult,
+    profile_document,
+    request_document,
+)
 
 
 @dataclass(frozen=True)
@@ -45,9 +52,9 @@ class TelemetryCollector:
         document = {
             "schema_version": 2,
             "kind": "telemetry-observation",
-            "request": asdict(request),
-            "profile": asdict(profile),
-            "rendered_query": profile.query(request.scope),
+            "request": request_document(request),
+            "profile": profile_document(profile),
+            "rendered_query": profile.query(request.scope, request.binding),
             "context_version": version,
             "observed_at": observed.isoformat(),
             "result": asdict(result),

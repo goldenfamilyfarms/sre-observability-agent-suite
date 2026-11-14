@@ -18,6 +18,7 @@ from .evidence_client import EvidenceClient
 from .github import GitHubClient
 from .jira import JiraClient
 from .journal import Journal
+from .telemetry import EngineeringTelemetry
 from .wire import canonical, digest, ticket_from_wire, ticket_json
 from .workspace import ContainerTests, make_patch, selected_source
 
@@ -57,6 +58,11 @@ class ExecutionRuntime:
         self.tests = tests or ContainerTests(settings)
         self.journal = Journal(settings.work_root)
         self.clock = clock
+        self.telemetry = (
+            EngineeringTelemetry(Path(settings.telemetry_config))
+            if settings.telemetry_config
+            else None
+        )
         self.policy = digest(
             {
                 **(
@@ -68,6 +74,7 @@ class ExecutionRuntime:
                     if settings.evidence_ca_file
                     else {}
                 ),
+                **({"telemetry": self.telemetry.fingerprint} if self.telemetry else {}),
                 "repository": settings.repository,
                 "jira_url": settings.jira_url,
                 "evidence_url": settings.evidence_url,
@@ -92,6 +99,8 @@ class ExecutionRuntime:
         self, spec: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
         key = execution_key(spec)
+        if self.telemetry and self.telemetry.policy.scope != scope_from_dict(spec["scope"]):
+            raise ValueError("telemetry policy differs from execution scope")
 
         def load() -> dict[str, Any]:
             ticket = self.jira.get_ticket(spec["ticket_key"], heartbeat)
@@ -111,7 +120,9 @@ class ExecutionRuntime:
             }
 
         manifest = self.journal.compute(key + ":manifest", spec, load, heartbeat)
-        reference = {"key": key, "manifest": digest(manifest)}
+        reference: dict[str, Any] = {"key": key, "manifest": digest(manifest)}
+        if self.telemetry:
+            reference["telemetry_required"] = True
         self._guard(reference, heartbeat)
         if self.settings.jira_transitions:
 
@@ -244,6 +255,13 @@ class ExecutionRuntime:
             "evidence": json.loads(canonical(asdict(evidence))),
         }
 
+    def prepare_telemetry(
+        self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
+    ) -> dict[str, Any]:
+        if self.telemetry is None:
+            raise ValueError("engineering telemetry is not authorized")
+        return self.telemetry.prepare(self, arguments, heartbeat)
+
     def finish(
         self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
@@ -255,16 +273,24 @@ class ExecutionRuntime:
         manifest = self._guard(reference, heartbeat)
         loaded = self._results(reference, results, heartbeat)
         ready = len(loaded) == 4 and all(r["verdict"] == "passed" for r in loaded)
+        telemetry = (
+            self.telemetry.verify(self, arguments, heartbeat) if ready and self.telemetry else None
+        )
+        if telemetry is not None:
+            ready = telemetry["ready"]
         ticket = ticket_from_wire(manifest["ticket"])
 
         def guard() -> None:
             self._guard(reference, heartbeat)
             self._results(reference, results, heartbeat)
+            if telemetry is not None and self.telemetry is not None:
+                if self.telemetry.verify(self, arguments, heartbeat) != telemetry:
+                    raise ValueError("telemetry attestation changed")
             if pull_request is not None:
                 self.github.verify(pull_request, heartbeat)
 
-        pull_request: dict[str, Any] | None = None
-        if ready and self.settings.github_prs:
+        pull_request: dict[str, Any] | None = telemetry["pull_request"] if telemetry else None
+        if ready and self.settings.github_prs and pull_request is None:
             pull_request = self.github.publish(
                 reference["key"],
                 reference["manifest"],
@@ -291,6 +317,7 @@ class ExecutionRuntime:
             "outcome": "ready_for_review" if ready else "blocked",
             "manifest": reference["manifest"],
             "stages": results,
+            **({"telemetry": telemetry} if telemetry is not None else {}),
             "patch_sha256": hashlib.sha256(loaded[0].get("patch", "").encode()).hexdigest()
             if loaded
             else None,
@@ -312,4 +339,5 @@ class ExecutionRuntime:
             "pull_request": pull_request,
             "manifest": reference["manifest"],
             "patch_artifact": results[0]["artifact"] if results else None,
+            **({"telemetry": telemetry} if telemetry is not None else {}),
         }

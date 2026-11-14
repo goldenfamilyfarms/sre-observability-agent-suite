@@ -8,7 +8,8 @@ from typing import Any
 from temporalio import activity
 from temporalio.exceptions import ApplicationError, CancelledError
 
-from ..api_wire import decode, fields, text
+from ..api import evidence_id
+from ..api_wire import decode, evidence_from_wire, fields, text
 from ..execution.process import ExecutionBlocked, run_process
 from ..execution.temporal_activities import heartbeat
 from ..execution.wire import canonical
@@ -59,7 +60,9 @@ class TelemetryActivities:
                     "telemetry collection failed", non_retryable=result.code != 75
                 )
             receipt = fields(
-                decode(result.output), {"slot", "status", "evidence_id", "evidence_sha256"}
+                decode(result.output),
+                {"slot", "status", "evidence_id", "evidence_sha256"}
+                | ({"evidence"} if schedule.request.binding else set()),
             )
             if integer(receipt["slot"], 0, 23) != slot or receipt["status"] not in {
                 "observed",
@@ -70,11 +73,20 @@ class TelemetryActivities:
             import re
 
             sha = text(receipt["evidence_sha256"], 64)
-            if (
-                not re.fullmatch(r"[0-9a-f]{64}", sha)
-                or receipt["evidence_id"] != "telemetry-" + sha
+            if not re.fullmatch(r"[0-9a-f]{64}", sha) or not re.fullmatch(
+                r"ev-[0-9a-f]{64}", text(receipt["evidence_id"], 67)
             ):
                 raise ValueError("invalid evidence reference")
+            if schedule.request.binding:
+                evidence = evidence_from_wire(receipt["evidence"])
+                if (
+                    evidence.scope != schedule.request.scope
+                    or evidence.sha256 != sha
+                    or evidence.id != receipt["evidence_id"]
+                    or evidence.id
+                    != evidence_id(evidence.producer, evidence.scope, "telemetry-" + sha)
+                ):
+                    raise ValueError("invalid bound evidence reference")
             return dict(receipt)
         except (ApplicationError, CancelledError):
             raise

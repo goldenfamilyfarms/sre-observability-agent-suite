@@ -41,6 +41,7 @@ jobs:
           python -m pip install .
           cd "$RUNNER_TEMP"
           python -m sre_suite.demo
+          python -m sre_suite.execution.cli export-telemetry-plan --help
           python -m sre_suite.execution.cli preflight --help
           python -m sre_suite.execution.cli pilot-setup --help
           python -m sre_suite.local_pilot --help

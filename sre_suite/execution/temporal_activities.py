@@ -48,3 +48,7 @@ class Activities:
     @activity.defn(name="record_result")
     def finish(self, value: dict[str, Any]) -> dict[str, Any]:
         return self._call(self.runtime.finish, value)
+
+    @activity.defn(name="prepare_engineering_telemetry")
+    def telemetry(self, value: dict[str, Any]) -> dict[str, Any]:
+        return self._call(self.runtime.prepare_telemetry, value)

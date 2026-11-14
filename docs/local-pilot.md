@@ -125,3 +125,5 @@ These tests remove only their own verified test volume. They make no Jira/GitHub
 ## Published-plan handoff
 
 `python -m sre_suite.local_pilot handoff --help` describes the guarded bridge from a published Jira plan to read-only execution preflight. It reuses this stack and the private worker configuration without starting services or a workflow. See the [handoff guide](planning-handoff.md).
+
+For optional candidate-bound Prometheus/Loki/Tempo observations, follow the [engineering telemetry guide](engineering-telemetry.md). This requires a separate telemetry worker and independently authorized preview setup; it does not grant deployment permission.

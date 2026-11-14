@@ -22,6 +22,13 @@ def main() -> int:
     init.add_argument("--metrics-token-file", type=Path, required=True)
     init.add_argument("--mode", choices=("native", "desktop"), required=True)
     init.add_argument("--ports-file", type=Path)
+    certify = commands.add_parser("prepare-certification")
+    certify.add_argument("--directory", type=Path, required=True)
+    certify.add_argument("--managed-policy", type=Path, required=True)
+    certify.add_argument("--output", type=Path, required=True)
+    certify.add_argument("--window-seconds", type=int, default=30)
+    certify.add_argument("--collector-queue", default="sre-local-telemetry-v1")
+    certify.add_argument("--verifier-queue", default="sre-local-certification-v1")
     stop_command = commands.add_parser("stop")
     stop_command.add_argument("--directory", type=Path, required=True)
     stop_command.add_argument("--authorize-stop", action="store_true")
@@ -52,6 +59,21 @@ def main() -> int:
                         "started": False,
                         "endpoints": {b: config.url(b) for b in IMAGES},
                     }
+                )
+            )
+        elif args.command == "prepare-certification":
+            from .certification import prepare
+
+            print(
+                json.dumps(
+                    prepare(
+                        args.directory,
+                        args.managed_policy,
+                        args.output,
+                        window_seconds=args.window_seconds,
+                        collector_queue=args.collector_queue,
+                        verifier_queue=args.verifier_queue,
+                    )
                 )
             )
         elif args.command == "stop":

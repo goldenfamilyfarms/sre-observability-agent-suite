@@ -28,7 +28,7 @@ The expectation template contains ten null entries and is **intentionally invali
 
 The controller measures actual handler durations. It supplies no guaranteed latency percentile or arbitrary SLO target. If an independent fixed oracle cannot support the selected query/window, revise the experiment and its private policy; do not weaken the gate to pass.
 
-The verification policy must contain exactly one source each for Prometheus, Loki and full-trace Tempo, a prearranged nonzero trace ID, and limits of at least seven records. It must preserve the mapping's applicability. Scope and artifact/plan label names come from those profiles, so customized mappings are honored. Reserved metric dimensions (`case`, `le`, `__name__`) cannot also carry scope. Each new run should use a fresh trace ID and observation window.
+The verification policy must contain 3–20 sources covering Prometheus, Loki and exactly one full-trace Tempo source, a prearranged nonzero trace ID, and limits of at least seven records. It must preserve the mapping's applicability. Scope and artifact/plan label names come from those profiles, so customized mappings are honored. Multiple profiles for a backend must have identical identity mappings. Reserved metric dimensions (`case`, `le`, `__name__`) cannot also carry scope. Each new run should use a fresh trace ID and observation window.
 
 ```sh
 python -m sre_suite.demo_fixture prepare \

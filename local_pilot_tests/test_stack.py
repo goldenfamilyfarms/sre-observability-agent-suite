@@ -10,6 +10,7 @@ import json
 import os
 import socket
 import ssl
+import subprocess
 import sys
 import tempfile
 import threading
@@ -107,7 +108,20 @@ class StackTests(unittest.TestCase):
         if name in found.splitlines():
             info = json.loads(command(["docker", "volume", "inspect", name]))[0]
             self.assertEqual(info["Labels"]["sre.pilot.id"], self.config.identity)
-            command(["docker", "volume", "rm", name])
+            # Docker --rm may detach the volume after `docker stop` has returned.
+            # Retry only this owned test volume's transient in-use error, for at most 10s.
+            deadline = time.monotonic() + 10
+            while True:
+                try:
+                    command(["docker", "volume", "rm", name])
+                    break
+                except subprocess.CalledProcessError as error:
+                    if (
+                        b"volume is in use" not in (error.stderr or b"")
+                        or time.monotonic() >= deadline
+                    ):
+                        raise
+                    time.sleep(0.1)
 
     def start_stack(self):
         self.stop.clear()

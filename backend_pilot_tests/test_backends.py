@@ -40,7 +40,7 @@ def ports():
             s.close()
 
 
-class BackendPilotTests(managed.ManagedHarness):
+class BackendHarness(managed.ManagedHarness):
     async def configure_backends(self):
         fixture = self.f.d.f.f
         now = datetime.now(UTC)
@@ -138,6 +138,8 @@ class BackendPilotTests(managed.ManagedHarness):
             result[s.profile.backend] = (q, collector.collect(q, upload_evidence=True))
         return result
 
+
+class BackendPilotTests(BackendHarness):
     async def test_real_scrape_export_query_evidence_restart_and_generation_fences(self):
         workers = self.workers()
         async with workers[0], workers[1], workers[2]:
@@ -202,7 +204,7 @@ class BackendPilotTests(managed.ManagedHarness):
             TelemetryAdapter(p, transport(p, self.collector_env)).query(q).status,
             ObservationStatus.EMPTY,
         )
-        with patch("backend_pilot_tests.test_backends.transport") as connect:
+        with patch(f"{__name__}.transport") as connect:
             collector = TelemetryCollector(
                 QueryPolicy(self.config.scope, (p,)),
                 self.f.d.f.engineering.runtime.evidence,
@@ -224,7 +226,7 @@ class BackendPilotTests(managed.ManagedHarness):
         finally:
             registry.close()
         with (
-            patch("backend_pilot_tests.test_backends.transport") as connect,
+            patch(f"{__name__}.transport") as connect,
             self.assertRaises(RemoteError),
         ):
             self.collect()

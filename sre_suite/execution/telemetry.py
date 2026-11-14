@@ -78,17 +78,26 @@ class EngineeringTelemetry:
         self.window = integer(row["window_seconds"], 1, 300)
         self.producer = text(row["producer"], 200)
         profiles = row["profiles"]
-        if not isinstance(profiles, list) or not 1 <= len(profiles) <= 3:
-            raise ValueError("require one to three reviewed telemetry profiles")
+        if not isinstance(profiles, list) or not 1 <= len(profiles) <= 20:
+            raise ValueError("require 1..20 reviewed telemetry profiles")
         self.profiles: list[tuple[str, str | None]] = []
-        backends = set()
+        names = set()
+        self.query_options: dict[str, tuple[int, int]] = {}
         for item in profiles:
-            selection = fields(item, {"profile", "trace_id"})
+            selection = fields(
+                item,
+                {"profile", "trace_id"}
+                | (
+                    {"step_seconds", "limit"}
+                    if isinstance(item, dict) and ("step_seconds" in item or "limit" in item)
+                    else set()
+                ),
+            )
             name = text(selection["profile"], 64)
             trace_id = None if selection["trace_id"] is None else text(selection["trace_id"], 32)
             profile = next((p for p in self.policy.profiles if p.id == name), None)
-            if profile is None or not profile.binding_labels or profile.backend in backends:
-                raise ValueError("require unique backends with candidate digest mappings")
+            if profile is None or not profile.binding_labels or name in names:
+                raise ValueError("require unique profile IDs with candidate digest mappings")
             if profile.backend == Backend.TEMPO:
                 if (
                     not profile.allow_full_traces
@@ -99,7 +108,11 @@ class EngineeringTelemetry:
                     raise ValueError("engineering telemetry requires an authorized full trace ID")
             elif trace_id is not None:
                 raise ValueError("trace ID only applies to Tempo")
-            backends.add(profile.backend)
+            names.add(name)
+            self.query_options[name] = (
+                integer(selection.get("step_seconds", 15), 1, 3600),
+                integer(selection.get("limit", 100), 1, 500),
+            )
             self.profiles.append((name, trace_id))
         self.fingerprint = digest(
             {
@@ -110,6 +123,11 @@ class EngineeringTelemetry:
                 "window": self.window,
                 "producer": self.producer,
                 "binding_version": 1,
+                **(
+                    {"query_options": self.query_options}
+                    if any(v != (15, 100) for v in self.query_options.values())
+                    else {}
+                ),
             }
         )
 
@@ -160,7 +178,15 @@ class EngineeringTelemetry:
                 raise ValueError("candidate evidence expires before collection can finish")
             schedules = []
             for name, trace_id in self.profiles:
-                query = QueryRequest(scope, name, start, end, trace_id=trace_id, binding=binding)
+                query = QueryRequest(
+                    scope,
+                    name,
+                    start,
+                    end,
+                    *self.query_options[name],
+                    trace_id=trace_id,
+                    binding=binding,
+                )
                 self.policy.resolve(query)
                 schedule = TelemetrySchedule(
                     "engineering-" + digest({"execution": reference["key"], "profile": name})[:48],

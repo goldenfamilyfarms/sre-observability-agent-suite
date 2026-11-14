@@ -48,6 +48,7 @@ jobs:
           python -m sre_suite.execution.cli pilot-setup --help
           python -m sre_suite.local_pilot --help
           python -m sre_suite.local_telemetry --help
+          python -m sre_suite.local_telemetry prepare-certification --help
           python -m sre_suite.pilot_demo --help
           python -m sre_suite.demo_fixture --help
           python -m sre_suite.demo_fixture.lifecycle --help
@@ -192,5 +193,5 @@ jobs:
           for image in IMAGES.values():
               subprocess.run(['docker', 'pull', image], check=True, timeout=180)
           PYTHON
-      - name: Real managed pilot scraping, ingestion, evidence, restart and generation fences
+      - name: Real backend pilot and complete 120-check engineering workflow
         run: python -m unittest discover -s backend_pilot_tests -v

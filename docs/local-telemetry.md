@@ -85,3 +85,5 @@ python -m unittest discover -s backend_pilot_tests -v
 CI runs this test on Linux/Python 3.11 and 3.14; local validation also exercises macOS Docker Desktop. This proves the local fixture-to-backend-to-evidence path, not a passing service certificate or live Jira/Claude execution. Cross-host recovery, arbitrary candidate deployment, backend upgrades, cloud provisioning and private service acceptance remain separate work.
 
 Configuration references: [Prometheus scrape/TLS configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/), [Loki filesystem examples](https://grafana.com/docs/loki/latest/configure/examples/configuration-examples/), [Tempo configuration](https://grafana.com/docs/tempo/latest/configuration/) and [Docker Desktop networking](https://docs.docker.com/desktop/features/networking/). Runtime tests validate the pinned versions; future documentation defaults do not automatically upgrade the bundle.
+
+To connect an already reviewed full 120-check policy to this stack, use the [full certification preparation guide](local-certification.md). The narrow generated journey query policy remains insufficient by itself.

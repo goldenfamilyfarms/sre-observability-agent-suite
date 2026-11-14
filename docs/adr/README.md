@@ -19,3 +19,6 @@
 | [015](015-jira-plan-publication.md) | Scoped plan review, durable creation intent and conservative Jira reconciliation | Accepted for planning pilot; live acceptance pending |
 | [016](016-scoped-telemetry-adapters.md) | Scoped Prometheus, Loki and Tempo observations with explicit evidence capture | Accepted for collection pilot; live acceptance pending |
 | [017](017-durable-telemetry-and-full-traces.md) | Full Tempo trace evidence and finite durable collection | Accepted for telemetry pilot; live acceptance pending |
+| [018](018-engineering-telemetry-binding.md) | Candidate-bound engineering telemetry child workflows | Accepted for the execution pilot |
+| [019](019-deterministic-certification.md) | Evidence-backed deterministic 120-check certification | Accepted for the source-candidate pilot |
+| [020](020-engineering-certification-gate.md) | Certification child workflow and current engineering readiness gate | Accepted for the opt-in pilot |

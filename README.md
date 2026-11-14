@@ -2,7 +2,7 @@
 
 A public, generic foundation for Jira-driven observability engineering using Claude Code workers, an external durable orchestrator, and shared evidence-backed knowledge.
 
-**Status: Phase 1 execution pilot implemented.** Preview identity, PostgreSQL persistence, authenticated evidence/context APIs, Temporal orchestration, restricted Claude Code workers and Jira adapters are included. Version 0.11 adds scoped Jira plan discovery, review and opt-in issue creation alongside the existing demo and local pilot setup. The runtime includes opt-in automatic draft PRs, bounded Jira status transitions and a read-only preflight command. Live Jira/model acceptance remains pending your private environment configuration. No merge, deployment, cloud or telemetry-query adapter is included; examples are synthetic. Start with the [one-ticket live pilot checklist](docs/live-pilot-checklist.md), [local pilot startup guide](docs/local-pilot.md), [runtime setup guide](docs/execution-runtime.md) and [.env.example](.env.example).
+**Status: Phase 1 execution pilot implemented.** Preview identity, PostgreSQL persistence, authenticated evidence/context APIs, Temporal orchestration, restricted Claude Code workers and Jira adapters are included. Version 0.12 adds a guarded planning-to-pilot handoff that generates an execution specification and runs read-only preflight. Workflow start remains explicit. The runtime includes opt-in automatic draft PRs, bounded Jira status transitions and a read-only preflight command. Live Jira/model acceptance remains pending your private environment configuration. No merge, deployment, cloud or telemetry-query adapter is included; examples are synthetic. Start with the [one-ticket live pilot checklist](docs/live-pilot-checklist.md), [local pilot startup guide](docs/local-pilot.md), [runtime setup guide](docs/execution-runtime.md) and [.env.example](.env.example).
 
 ## Run locally
 
@@ -13,7 +13,7 @@ python -m unittest discover -v
 python -m sre_suite.demo
 ```
 
-The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.11.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
+The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.12.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
 
 For the same static checks as CI:
 
@@ -27,6 +27,8 @@ python -m ruff format --check .
 ```
 
 ## Included
+
+- [Planning-to-pilot handoff](docs/planning-handoff.md): verified receipt/journal/Jira mapping, private spec/report output and local configuration reuse.
 
 - [Jira planning](docs/jira-planning.md): project/field discovery, evidence-backed DAG review, conservative issue creation and execution-contract publication.
 
@@ -50,6 +52,8 @@ python -m ruff format --check .
 - Unit/adapter tests, a synthetic vertical slice, and CI configuration with no shipping steps.
 
 ## Design and delivery
+
+- [Full-suite completion criteria and remaining implementations](docs/suite-completion.md)
 
 - [Demo repository, pilot ticket and live-run checklist](docs/live-pilot-checklist.md)
 - [Grounded Phase 0 assessment](docs/phase-0-assessment.md)

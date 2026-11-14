@@ -295,7 +295,9 @@ class Planner:
             raise ValueError("issue identity outside project")
         return value
 
-    def issue(self, plan: Plan, node: Node, key: str) -> dict[str, Any]:
+    def issue(
+        self, plan: Plan, node: Node, key: str, *, allow_completed: bool = False
+    ) -> dict[str, Any]:
         key = self.key(key)
         field = self.config.contract_field
         issue = obj(
@@ -313,7 +315,9 @@ class Planner:
             or fields.get("summary") != node.summary
             or fields.get("labels") != [self.label(plan, node)]
             or obj(obj(fields.get("status")).get("statusCategory")).get("key")
-            not in {"new", "indeterminate"}
+            not in (
+                {"new", "indeterminate", "done"} if allow_completed else {"new", "indeterminate"}
+            )
             or marker.get("value") != self.marker(plan, node)
         ):
             raise ValueError("existing issue differs from planned identity")

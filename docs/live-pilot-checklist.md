@@ -9,14 +9,14 @@ Version 0.10 prepares a synthetic repository, a version 2 Jira execution contrac
 | Demo repository | [goldenfamilyfarms/sre-observability-pilot-demo](https://github.com/goldenfamilyfarms/sre-observability-pilot-demo) |
 | Repository ID | `1450500737` |
 | Bootstrap PR / preview anchor | [PR #1](https://github.com/goldenfamilyfarms/sre-observability-pilot-demo/pull/1) |
-| Publication base while bootstrap remains unmerged | `feat/demo-baseline` |
-| Reviewed baseline commit | `2c2b46a6a43f7693c7d498b2b2099a98d31a32fb` |
+| Current publication base (bootstrap PR merged) | `main` |
+| Reviewed baseline commit | `a492698b84cc4cda04d5e64d3f638a460827e129` |
 | Preview identity / initial generation | `preview-r1450500737-pr1` / `1` |
 | Service / environment | `pilot-log-demo` / `development` |
 | Worker edit allowlist | `app.py` only |
 | Candidate test command | `["python", "acceptance.py"]` |
 
-Use the suite's `feat/demo-live-pilot` branch, which includes the existing Phase 1 foundation. The suite PR targets `feat/pilot-setup` for a focused review. Neither repository needs a merge to run this pilot. The bootstrap PR is the preview identity anchor; the worker creates a **different** draft PR targeting the reviewed demo base. Preview registration here is metadata, not a cloud environment.
+Use the current reviewed suite feature branch, including the Phase 1 foundation. The demo bootstrap PR was merged before this handoff increment; use its current main baseline and recheck the full SHA. The bootstrap PR number is only the illustrative metadata anchor; explicitly authorize the selected preview identity/generation before setup. The worker creates a different draft PR targeting main. No additional merge is needed. Preview registration here is metadata, not a cloud environment.
 
 The demo is a pure request-handler function, without a listener, dependencies or production data. It deliberately lacks `trace_id` in its structured logs. The ticket requires exactly 32 lowercase hexadecimal characters, excluding the all-zero value; invalid context must be omitted. Response behavior and sanitized log fields must remain unchanged. This is synthetic correlation, not a W3C header parser, OpenTelemetry integration or service certification.
 
@@ -39,7 +39,7 @@ docker pull python@sha256:65bd3d9f1d7fa268dd1909973ba7eb4bdf41f6dcf2cfbe76ba9528
 
 ```sh
 mkdir -m 700 /absolute/private/pilot
-git clone --branch feat/demo-baseline --single-branch \
+git clone --branch main --single-branch \
   https://github.com/goldenfamilyfarms/sre-observability-pilot-demo.git \
   /absolute/private/pilot/demo-source
 git -C /absolute/private/pilot/demo-source rev-parse HEAD
@@ -55,7 +55,7 @@ python -m sre_suite.pilot_demo prepare \
   --repository goldenfamilyfarms/sre-observability-pilot-demo \
   --repository-id 1450500737 --pr-number 1 \
   --ticket-key PILOT-123 --generation 1 --run-id demo-live-001 \
-  --base-branch feat/demo-baseline \
+  --base-branch main \
   --output /absolute/private/pilot/prepared
 ```
 
@@ -152,14 +152,16 @@ Retain the returned `workflow_id`. Replace `WORKFLOW_ID` below with that exact v
 
 ```sh
 python -m sre_suite.local_pilot run \
-  --directory /absolute/private/pilot/stack -- status WORKFLOW_ID
+  --directory /absolute/private/pilot/stack \
+  --worker-env /absolute/private/pilot/prepared/worker.json -- status WORKFLOW_ID
 python -m sre_suite.local_pilot run \
-  --directory /absolute/private/pilot/stack -- result WORKFLOW_ID
+  --directory /absolute/private/pilot/stack \
+  --worker-env /absolute/private/pilot/prepared/worker.json -- result WORKFLOW_ID
 ```
 
 - [ ] Temporal completes with application result `ready_for_review`, not merely a completed orchestration status.
 - [ ] Implementation, review, tests and QA all pass with readable evidence bound to the same source scope and saved artifact. The unchanged strict candidate gate reports seven tests, zero failures/errors/skips; the initial missing-correlation failure has been fixed.
-- [ ] The generated demo PR is open and draft, targets `feat/demo-baseline`, changes only `app.py` and preserves the reviewed baseline as its source parent. Check the actual code and PR checks. Do not merge it or the bootstrap PR as part of this pilot.
+- [ ] The generated demo PR is open and draft, targets `main`, changes only `app.py` and preserves the reviewed baseline as its source parent. Check the actual code and PR checks. Do not merge it or the bootstrap PR as part of this pilot.
 - [ ] Jira reached the configured nonterminal review status and its scoped result references the same candidate PR and evidence. It did not reach Done/Accepted or invoke shipping automation.
 - [ ] Privately record issue key, workflow ID, source and candidate SHAs, preview ID/generation, baseline and stage evidence references/digests, strict test result, PR URL, Jira status, model use/cost and observed failures. Do not publish credentials, raw Jira content or private logs in the demo PR.
 
@@ -172,3 +174,5 @@ On blocked/failed/canceled execution, inspect `status` and private `result`/hist
 Restart the same local stack/worker for interrupted work only while its scope, grants, evidence and policy remain valid. Duplicate starts are refused. A changed base, expired/replaced preview or changed contract requires a newly reviewed scope and explicit registration/configuration; do not edit evidence timestamps, weaken tests or extend a grant implicitly. A local-stack restart retains state and does not renew authorization. See [publication recovery](pr-and-jira-publication.md#retry-concurrency-and-partial-completion) and [local stop/restart](local-pilot.md#stop-restart-and-recovery).
 
 Use `cancel WORKFLOW_ID` through the local wrapper when needed, then inspect external state. Ctrl-C stops the worker/services and preserves PostgreSQL volume, Temporal state and journal. No command here merges, deploys, promotes, deletes the demo repository or silently cleans up external work.
+
+For planner-created issues, use the [guarded handoff](planning-handoff.md) instead of manually changing a bootstrap execution spec or reusing its workflow ID.

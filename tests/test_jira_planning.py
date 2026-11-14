@@ -111,7 +111,7 @@ class PlanningTransport:
         return copy.deepcopy(issue)
 
 
-class PlanningTests(unittest.TestCase):
+class PlanningFixture(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -164,6 +164,8 @@ class PlanningTests(unittest.TestCase):
             NOW,
         )
 
+
+class PlanningTests(PlanningFixture):
     def test_discovery_paginates_and_dry_run_only_reads(self):
         report = self.planner.dry_run(self.plan)
         self.assertEqual(report["order"], ["base", "followup"])

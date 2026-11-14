@@ -121,3 +121,7 @@ python -m unittest discover -s local_pilot_tests -v
 ```
 
 These tests remove only their own verified test volume. They make no Jira/GitHub/model calls. They prove local startup and restart, not live ticket completion, power-loss recovery, database upgrades, independent reviewer identities or production readiness.
+
+## Published-plan handoff
+
+`python -m sre_suite.local_pilot handoff --help` describes the guarded bridge from a published Jira plan to read-only execution preflight. It reuses this stack and the private worker configuration without starting services or a workflow. See the [handoff guide](planning-handoff.md).

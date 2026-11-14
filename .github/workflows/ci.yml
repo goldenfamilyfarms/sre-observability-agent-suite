@@ -44,6 +44,8 @@ jobs:
           python -m sre_suite.local_pilot --help
           python -m sre_suite.pilot_demo --help
           python -m sre_suite.jira_planning --help
+          python -m sre_suite.jira_planning handoff --help
+          python -m sre_suite.local_pilot handoff --help
           python -c 'from sre_suite.pilot_demo.prepare import template; assert len(template()) == 6; assert "acceptance.py" in template()'
           python -c 'from sre_suite.certification import load_catalog; from sre_suite.api import EvidenceContextApi; assert len(load_catalog().checks) == 120; assert len(EvidenceContextApi.ROUTES) == 3'
 

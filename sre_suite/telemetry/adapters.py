@@ -253,6 +253,8 @@ class TelemetryAdapter:
         profile = self.profile
         if profile.id != request.profile:
             raise TelemetryError("profile_mismatch")
+        if request.trace_id is not None and not profile.allow_full_traces:
+            raise TelemetryError("full_trace_not_authorized")
         query = profile.query(request.scope)
         params: dict[str, str | int] = {"query": query, "limit": request.limit}
         if profile.backend == Backend.PROMETHEUS:
@@ -281,6 +283,14 @@ class TelemetryAdapter:
                 "limit": request.limit,
                 "spss": 1,
             }
+            if request.trace_id is not None:
+                path = "/api/v2/traces/" + request.trace_id
+                params = {
+                    "start": epoch_ns(request.start) // 1_000_000_000,
+                    "end": epoch_ns(request.end) // 1_000_000_000,
+                    "span_pruning": "false",
+                }
+                query = canonical({"trace_id": request.trace_id, "scope_selector": query})
         # Encode periods too: the common HTTP client's traversal rejection also covers
         # query strings; a legitimate reviewed regex containing '..' must still work.
         endpoint = path + "?" + urlencode(params).replace(".", "%2E")
@@ -293,13 +303,20 @@ class TelemetryAdapter:
             metrics: tuple[MetricSeries, ...] = ()
             logs: tuple[LogEntry, ...] = ()
             traces: tuple[TraceSummary, ...] = ()
+            complete_trace = None
             if profile.backend == Backend.PROMETHEUS:
                 metrics, issues = prometheus(raw, profile, request)
             elif profile.backend == Backend.LOKI:
                 logs, issues = loki(raw, profile, request)
-            else:
+            elif request.trace_id is None:
                 traces, issues = tempo(raw, request)
+            else:
+                from .traces import full_trace
+
+                complete_trace, issues = full_trace(raw, profile, request)
             count = len(metrics) + len(logs) + len(traces)
+            if complete_trace:
+                count += len(complete_trace.spans)
             status = (
                 ObservationStatus.PARTIAL
                 if issues
@@ -314,6 +331,7 @@ class TelemetryAdapter:
                 metrics,
                 logs,
                 traces,
+                complete_trace,
             )
         except RemoteError as error:
             code = "transport_error" if error.status == 0 else f"http_{error.status}"

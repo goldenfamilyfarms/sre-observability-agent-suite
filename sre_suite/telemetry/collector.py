@@ -52,9 +52,16 @@ class TelemetryCollector:
             "observed_at": observed.isoformat(),
             "result": asdict(result),
             "certification_verdict": None,
-            "attribution": "query-policy-only"
-            if result.backend.value == "tempo"
-            else ("query-policy-and-returned-labels"),
+            "operation": "trace-by-id" if request.trace_id else "query",
+            "attribution": (
+                "matching-resource-spans-with-cross-service-context"
+                if result.full_trace
+                else (
+                    "query-policy-only"
+                    if result.backend.value == "tempo"
+                    else "query-policy-and-returned-labels"
+                )
+            ),
         }
         content = (canonical(document) + "\n").encode()
         if len(content) > 1_000_000:

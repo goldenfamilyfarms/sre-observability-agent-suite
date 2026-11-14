@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -53,6 +54,8 @@ async def run(args: argparse.Namespace) -> None:
                     activities.stage,
                     activities.finish,
                     activities.telemetry,
+                    activities.certification,
+                    activities.certification_input,
                 ],
                 activity_executor=executor,
                 max_concurrent_activities=2,
@@ -75,19 +78,39 @@ async def run(args: argparse.Namespace) -> None:
             id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
         )
         print(json.dumps({"workflow_id": identity}))
-    elif args.command == "export-telemetry-plan":
+    elif args.command in {"export-telemetry-plan", "export-certification-plan"}:
         from ..telemetry.schedule_config import private_path
         from .wire import canonical
 
         destination = Path(args.output)
         private_path(destination.parent, directory=True)
-        value = await client.get_workflow_handle(args.workflow_id).query("telemetry_plan")
+        value = await client.get_workflow_handle(args.workflow_id).query(
+            "certification_plan"
+            if args.command == "export-certification-plan"
+            else "telemetry_plan"
+        )
         if not isinstance(value, dict):
-            raise ValueError("telemetry plan is not available yet")
+            raise ValueError("requested plan is not available yet")
         descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(descriptor, "w", encoding="utf-8") as output:
             output.write(canonical(value) + "\n")
-        print(json.dumps({"telemetry_plan_exported": True}))
+        print(
+            json.dumps({args.command.removeprefix("export-").replace("-", "_") + "_exported": True})
+        )
+    elif args.command == "submit-certification-fixture":
+        from dataclasses import asdict
+
+        from ..api_wire import evidence_from_wire
+        from ..verification.config import private_document
+        from .wire import canonical
+
+        evidence = evidence_from_wire(private_document(Path(args.evidence), 8192))
+        if not re.fullmatch(r"sre-[0-9a-f]{64}", args.workflow_id):
+            raise ValueError("expected engineering workflow identity")
+        await client.get_workflow_handle(args.workflow_id).signal(
+            "submit_certification_fixture", json.loads(canonical(asdict(evidence)))
+        )
+        print(json.dumps({"fixture_submitted": True, "verified": False}))
     elif args.command == "cancel":
         await client.get_workflow_handle(args.workflow_id).cancel()
         print(json.dumps({"cancellation_requested": True}))
@@ -121,9 +144,13 @@ def main() -> None:
     export.add_argument("workflow_id")
     export.add_argument("--digest", required=True)
     export.add_argument("--output", required=True)
-    plan = commands.add_parser("export-telemetry-plan")
-    plan.add_argument("workflow_id")
-    plan.add_argument("--output", required=True)
+    for name in ("export-telemetry-plan", "export-certification-plan"):
+        plan = commands.add_parser(name)
+        plan.add_argument("workflow_id")
+        plan.add_argument("--output", required=True)
+    submission = commands.add_parser("submit-certification-fixture")
+    submission.add_argument("workflow_id")
+    submission.add_argument("--evidence", required=True)
     for name in ("status", "result", "cancel"):
         commands.add_parser(name).add_argument("workflow_id")
     args = parser.parse_args()
@@ -155,15 +182,22 @@ def main() -> None:
             raise SystemExit(exit_code(result))
         elif args.command == "check-config":
             settings = Settings.from_env(os.environ)
-            if settings.telemetry_config:
-                from .telemetry import EngineeringTelemetry
+            from .certification import EngineeringCertification
+            from .telemetry import EngineeringTelemetry
 
+            telemetry = (
                 EngineeringTelemetry(Path(settings.telemetry_config))
+                if settings.telemetry_config
+                else None
+            )
+            if settings.certification_config:
+                EngineeringCertification(Path(settings.certification_config), telemetry)
             print(
                 json.dumps(
                     {
                         "configuration_valid": True,
                         "engineering_telemetry_enabled": bool(settings.telemetry_config),
+                        "engineering_certification_enabled": bool(settings.certification_config),
                         "claude_enabled": settings.claude_enabled,
                         "jira_writes_enabled": settings.jira_writes,
                         "github_prs_enabled": settings.github_prs,

@@ -237,6 +237,11 @@ class VerificationFixture:
             ],
             "checks": {},
         }
+        self.populate()
+        self.policy = VerificationPolicy.parse(self.policy_raw)
+        self.collect()
+
+    def populate(self):
         self.assessments = {}
         self.rows = {category: [] for category in ("traces", "logs", "promql")}
         for check in self.catalog.checks:
@@ -260,7 +265,8 @@ class VerificationFixture:
                 "justification": "",
             }
         self.rows["traces"].insert(0, {**context[0], "attributes": {}, "events": [], "links": []})
-        self.policy = VerificationPolicy.parse(self.policy_raw)
+
+    def collect(self):
         self.observations = []
         for source in self.policy.sources:
             req = source.request(self.release, START, END)
@@ -341,7 +347,10 @@ class VerificationFixture:
             self.observations.append((p.id, collector.collect(req, upload_evidence=True).evidence))
         self.input = self.make_input()
         self.engine = CertificationEngine(
-            self.policy, self.api, Journal(root / "verification-journal"), clock=lambda: NOW
+            self.policy,
+            self.api,
+            Journal(self.fixture.root / "verification-journal"),
+            clock=lambda: NOW,
         )
 
     def make_input(self):

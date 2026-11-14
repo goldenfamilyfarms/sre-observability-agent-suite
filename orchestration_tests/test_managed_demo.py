@@ -34,7 +34,7 @@ from tests.managed_fixture import ManagedFixture
 from tests.test_api import request as api_request
 
 
-class ManagedWorkflowTests(unittest.IsolatedAsyncioTestCase):
+class ManagedHarness(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -159,6 +159,7 @@ class ManagedWorkflowTests(unittest.IsolatedAsyncioTestCase):
             SRE_EVIDENCE_CA_FILE=str(self.cert),
             SRE_DEMO_EXPORT_CA_FILE=str(self.cert),
         )
+        await self.configure_backends()
         start = datetime.now(UTC).replace(microsecond=0) + timedelta(seconds=8)
         self.f.request["plan"].update(
             window_start=start.isoformat(), window_end=(start + timedelta(seconds=12)).isoformat()
@@ -184,6 +185,9 @@ class ManagedWorkflowTests(unittest.IsolatedAsyncioTestCase):
         self.export_attempts = 0
         self.lose_export_ack = False
         self.invalidate = False
+
+    async def configure_backends(self):
+        pass
 
     def close_http(self):
         self.http.shutdown()
@@ -271,6 +275,8 @@ class ManagedWorkflowTests(unittest.IsolatedAsyncioTestCase):
         with socket.socket() as sock:
             self.assertNotEqual(sock.connect_ex(("127.0.0.1", self.port)), 0)
 
+
+class ManagedWorkflowTests(ManagedHarness):
     async def test_concrete_target_export_retries_workflow_restart_and_replay(self):
         self.drop_trace = self.lose_export_ack = True
         managed, runner, assessor = self.workers()

@@ -178,3 +178,5 @@ Use `cancel WORKFLOW_ID` through the local wrapper when needed, then inspect ext
 For planner-created issues, use the [guarded handoff](planning-handoff.md) instead of manually changing a bootstrap execution spec or reusing its workflow ID.
 
 For optional candidate-bound Prometheus/Loki/Tempo observations, follow the [engineering telemetry guide](engineering-telemetry.md). This requires a separate telemetry worker and independently authorized preview setup; it does not grant deployment permission.
+
+For a disposable single-host Prometheus/Loki/Tempo stack with HTTPS scraping and separate query/ingest credentials, follow the [local telemetry guide](local-telemetry.md). Keep workflow start explicit and regenerate reviewed policy fingerprints when changing endpoints.

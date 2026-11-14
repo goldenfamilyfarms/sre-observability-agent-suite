@@ -131,3 +131,5 @@ For optional candidate-bound Prometheus/Loki/Tempo observations, follow the [eng
 ## Managed local demo option
 
 Version 0.20 supports [managed target startup and durable export](managed-demo-pilot.md) within an explicitly started pilot. The optional reviewed dispatch preserves exact artifact, plan, preview ID and generation checks and orders export/assessment before telemetry collection. Separate worker authorization and private role credentials are required.
+
+For a disposable single-host Prometheus/Loki/Tempo stack with HTTPS scraping and separate query/ingest credentials, follow the [local telemetry guide](local-telemetry.md). Keep workflow start explicit and regenerate reviewed policy fingerprints when changing endpoints.

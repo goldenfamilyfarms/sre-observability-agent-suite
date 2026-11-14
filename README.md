@@ -2,7 +2,7 @@
 
 A public, generic foundation for Jira-driven observability engineering using Claude Code workers, an external durable orchestrator, and shared evidence-backed knowledge.
 
-**Status: Phase 1 execution pilot implemented.** Preview identity, PostgreSQL persistence, authenticated evidence/context APIs, Temporal orchestration, restricted Claude Code workers and Jira adapters are included. Version 0.20 adds opt-in managed demo startup and durable OTLP/Loki export before engineering telemetry collection, with authenticated readiness, fixed deadlines and cancellation cleanup. The pinned controller retains its reviewed 120-slot scenario mapping and durable local deduplication. Independent fixture-runner and assessor agents retain separate evidence identities and optional automatic engineering dispatch. Certification retains exact artifact/plan/preview-generation gates. The planning-to-pilot handoff generates an execution specification and runs read-only preflight. Workflow start remains explicit. The runtime includes opt-in automatic draft PRs, bounded Jira status transitions and a read-only preflight command. Live Jira/model acceptance remains pending your private environment configuration. No merge, deployment or cloud executor is included; examples are synthetic. Start with the [one-ticket live pilot checklist](docs/live-pilot-checklist.md), [local pilot startup guide](docs/local-pilot.md), [runtime setup guide](docs/execution-runtime.md) and [.env.example](.env.example).
+**Status: Phase 1 execution pilot implemented.** Preview identity, PostgreSQL persistence, authenticated evidence/context APIs, Temporal orchestration, restricted Claude Code workers and Jira adapters are included. Version 0.21 adds a local Prometheus/Loki/Tempo stack with authenticated HTTPS scraping, separate read/ingest credentials, persistent restart and real backend pilot tests. Managed demo startup and durable OTLP/Loki export run before engineering telemetry collection, with fixed deadlines and cancellation cleanup. The pinned controller retains its reviewed 120-slot scenario mapping and durable local deduplication. Independent fixture-runner and assessor agents retain separate evidence identities and optional automatic engineering dispatch. Certification retains exact artifact/plan/preview-generation gates. The planning-to-pilot handoff generates an execution specification and runs read-only preflight. Workflow start remains explicit. The runtime includes opt-in automatic draft PRs, bounded Jira status transitions and a read-only preflight command. Live Jira/model acceptance remains pending your private environment configuration. No merge, deployment or cloud executor is included; examples are synthetic. Start with the [one-ticket live pilot checklist](docs/live-pilot-checklist.md), [local pilot startup guide](docs/local-pilot.md), [runtime setup guide](docs/execution-runtime.md) and [.env.example](.env.example).
 
 ## Run locally
 
@@ -13,7 +13,7 @@ python -m unittest discover -v
 python -m sre_suite.demo
 ```
 
-The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.20.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
+The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.21.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
 
 For the same static checks as CI:
 
@@ -27,6 +27,8 @@ python -m ruff format --check .
 ```
 
 ## Included
+
+- [Local telemetry stack](docs/local-telemetry.md): explicitly started Prometheus, Loki and Tempo, private TLS gateways, scraping and persisted backend acceptance.
 
 - [Managed demo pilot](docs/managed-demo-pilot.md): automatic target lifecycle and durable export within an explicitly started workflow.
 

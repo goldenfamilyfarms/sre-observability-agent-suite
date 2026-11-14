@@ -37,6 +37,8 @@ def child_environment(policy: QueryPolicy, env: Mapping[str, str]) -> dict[str, 
     }
     for profile in policy.profiles:
         keys.add(profile.authorization_env)
+        if profile.ca_env:
+            keys.add(profile.ca_env)
         if profile.tenant_env:
             keys.add(profile.tenant_env)
     return {k: v for k, v in env.items() if k in keys}

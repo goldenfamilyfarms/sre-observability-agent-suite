@@ -50,7 +50,10 @@ def transport(profile: QueryProfile, env: Mapping[str, str]) -> JsonHttp:
         if not re.fullmatch(r"[A-Za-z0-9_.-]{1,150}", tenant):
             raise TelemetryError("invalid_tenant")
         headers["X-Scope-OrgID"] = tenant
-    return JsonHttp(profile.base_url, authorization, headers=headers, timeout=20)
+    ca = env.get(profile.ca_env) if profile.ca_env else None
+    if profile.ca_env and not ca:
+        raise TelemetryError("missing_local_ca")
+    return JsonHttp(profile.base_url, authorization, headers=headers, timeout=20, local_ca_file=ca)
 
 
 def obj(value: object) -> dict[str, object]:

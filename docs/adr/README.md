@@ -25,3 +25,4 @@
 | [021](021-independent-fixture-assessment.md) | Independent scenario execution and 120-check assessment | Accepted for the non-production pilot |
 | [022](022-demo-fixture-controller.md) | Pinned demo target, durable fixture effects and reviewed capability mapping | Accepted for the local non-production pilot |
 | [023](023-managed-demo-lifecycle.md) | Managed target startup and durable export before engineering collection | Accepted for the local non-production pilot |
+| [024](024-local-telemetry-backends.md) | Local telemetry backends, authenticated scraping and real pilot acceptance | Accepted for the local non-production pilot |

@@ -77,3 +77,7 @@ Run the parent with `status`/`result` as usual. Successful reports include a `ce
 ## Automatic independent assessment
 
 Version 0.18 accepts an optional `fixture` dispatch (`policy_sha256`, `runner_queue`, `task_queue`) in this private configuration. With it, the parent starts the [fixture/assessor child](fixture-agents.md) during the observation window and consumes its evidence directly. Manual fixture signals are ignored for readiness on that path. Without it, the bounded independent-reference handoff above is unchanged.
+
+## Managed local demo option
+
+Version 0.20 supports [managed target startup and durable export](managed-demo-pilot.md) within an explicitly started pilot. The optional reviewed dispatch preserves exact artifact, plan, preview ID and generation checks and orders export/assessment before telemetry collection. Separate worker authorization and private role credentials are required.

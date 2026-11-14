@@ -25,6 +25,14 @@ async def run(args: argparse.Namespace) -> None:
     policy = load_policy(args.policy)
     if args.command == "start" and not args.authorize_fixtures:
         raise ValueError("explicit authorization for fixture traffic and assessment is required")
+    if args.command == "start":
+        raw = private_document(args.request, 65536)
+        if not isinstance(raw, dict):
+            raise ValueError("fixture request must be an object")
+        request = FixtureRequest.parse(raw)
+        request.authorize(policy)
+        if request.demo and not getattr(args, "authorize_demo", False):
+            raise ValueError("managed target startup and export require explicit authorization")
     client = await connect()
     if args.command == "worker":
         dispatch = FixtureActivities(args.policy, args.journal, args.role, os.environ)
@@ -42,11 +50,7 @@ async def run(args: argparse.Namespace) -> None:
                 default_heartbeat_throttle_interval=timedelta(seconds=1),
             ).run()
     else:
-        raw = private_document(args.request, 65536)
-        if not isinstance(raw, dict):
-            raise ValueError("fixture request must be an object")
-        request = FixtureRequest.parse(raw)
-        request.authorize(policy)
+        assert isinstance(raw, dict)
         await client.start_workflow(
             FixtureAssessment.run,
             raw,
@@ -73,6 +77,7 @@ def main() -> int:
         if name == "start":
             p.add_argument("--request", type=Path, required=True)
             p.add_argument("--authorize-fixtures", action="store_true")
+            p.add_argument("--authorize-demo", action="store_true")
     template = sub.add_parser("template")
     template.add_argument("--verification-policy", type=Path, required=True)
     template.add_argument("--output", type=Path, required=True)

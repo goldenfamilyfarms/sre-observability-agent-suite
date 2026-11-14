@@ -133,3 +133,7 @@ Do not also start a standalone run for an automatic engineering child: the paren
 ## Validation limits
 
 Tests use real authenticated scoped evidence, synthetic controller responses, loopback HTTPS and a real local Temporal engine. They cover all 120 assessments through the full engineering/certification path, separate identities, response binding, lost acknowledgements, deduplication keys, failed probes, not-applicable decisions, expiry/generation, replay, restart and cancellation. No live private controller, service backend or credentials have been exercised. Target-side deduplication durability, truthful candidate metadata, meaningful service-specific probes and cross-host journal recovery need private acceptance.
+
+## Managed local demo option
+
+Version 0.20 supports [managed target startup and durable export](managed-demo-pilot.md) within an explicitly started pilot. The optional reviewed dispatch preserves exact artifact, plan, preview ID and generation checks and orders export/assessment before telemetry collection. Separate worker authorization and private role credentials are required.

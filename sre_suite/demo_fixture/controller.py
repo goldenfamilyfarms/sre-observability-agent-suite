@@ -97,7 +97,12 @@ class Controller:
         self.evidence, self.clock = evidence, clock
         self.trace_id = next(s.trace_id for s in policy.verification.sources if s.trace_id)
         identity = canonical(
-            {"binding": self.request.binding, "dispatch": policy.dispatch, "recipe": expected}
+            {
+                "binding": self.request.binding,
+                "dispatch": policy.dispatch,
+                "recipe": expected,
+                **({"demo": self.request.demo} if self.request.demo else {}),
+            }
         )
         with self.connect() as conn:
             conn.executescript(SCHEMA)

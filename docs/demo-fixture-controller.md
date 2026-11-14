@@ -64,7 +64,7 @@ python -m sre_suite.demo_fixture pin \
 python -m sre_suite.demo_fixture validate --target /absolute/private/target.json
 ```
 
-The pin command is offline; it cannot attest a live preview or authorize deployment. The independently authenticated evidence context API is checked again on every execution, cached retry, scrape and export. A different generation, plan, policy or window requires a separate target and state directory. An automatically generated engineering plan must be pinned and the controller made ready before its observation window; there is no automatic target pinning or provisioning in this increment. Allow enough dispatch delay for that explicit operator handoff, or use the existing standalone fixture start command with a reviewed future window.
+The pin command is offline; it cannot attest a live preview or authorize deployment. The independently authenticated evidence context API is checked again on every execution, cached retry, scrape and export. A different generation, plan, policy or window requires a separate target and state directory. For this manual route, an automatically generated engineering plan must be pinned and the controller made ready before its observation window. Version 0.20 adds an opt-in [managed target startup and durable export path](managed-demo-pilot.md); cloud provisioning remains unimplemented. Allow enough dispatch delay for that explicit operator handoff, or use the existing standalone fixture start command with a reviewed future window.
 
 ## Explicit HTTPS startup
 

@@ -202,6 +202,7 @@ class FixtureRequest:
     scope: Scope
     start: datetime
     end: datetime
+    demo: dict[str, Any] | None = None
 
     @classmethod
     def parse(cls, value: object) -> "FixtureRequest":
@@ -244,11 +245,22 @@ class FixtureRequest:
         for k in ("policy_sha256", "catalog_sha256"):
             if not re.fullmatch(r"[0-9a-f]{64}", text(plan[k], 64)):
                 raise ValueError("invalid policy digest")
-        return cls({k: plan[k] for k in sorted(BINDING_FIELDS)}, routing, scope, start, end)
+        from ..demo_fixture.managed_contracts import demo_dispatch
+
+        demo = demo_dispatch(plan["demo"]) if "demo" in plan else None
+        if demo and (end - start).total_seconds() <= demo["settle_seconds"]:
+            raise ValueError("demo window must leave time for export and settlement")
+        return cls({k: plan[k] for k in sorted(BINDING_FIELDS)}, routing, scope, start, end, demo)
 
     @property
     def identity(self) -> str:
-        return "sre-fixture-" + digest({"binding": self.binding, "dispatch": self.dispatch})
+        return "sre-fixture-" + digest(
+            {
+                "binding": self.binding,
+                "dispatch": self.dispatch,
+                **({"demo": self.demo} if self.demo else {}),
+            }
+        )
 
     def authorize(self, policy: FixturePolicy) -> None:
         if (

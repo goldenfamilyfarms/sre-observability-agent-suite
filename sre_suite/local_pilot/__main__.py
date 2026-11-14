@@ -29,6 +29,10 @@ def main() -> None:
         sub.add_argument("--directory", required=True, type=Path)
         if name in {"up", "run", "handoff"}:
             sub.add_argument("--worker-env", type=Path, required=name == "handoff")
+        if name == "up":
+            sub.add_argument("--demo-config", type=Path)
+            sub.add_argument("--demo-credentials", type=Path)
+            sub.add_argument("--authorize-demo", action="store_true")
         if name == "handoff":
             sub.add_argument("--plan", type=Path, required=True)
             sub.add_argument("--publication", type=Path, required=True)
@@ -128,6 +132,9 @@ def main() -> None:
                 args.worker_env,
                 notify=lambda value: print(json.dumps(value), flush=True),
                 stopping=lambda: stopped,
+                demo_config=args.demo_config,
+                demo_credentials=args.demo_credentials,
+                authorize_demo=args.authorize_demo,
             )
             print(json.dumps({"status": "stopped", "data_preserved": True}))
     except KeyboardInterrupt:

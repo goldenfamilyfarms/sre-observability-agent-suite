@@ -18,9 +18,11 @@ from temporalio.exceptions import ApplicationError
 from temporalio.testing import WorkflowEnvironment
 from temporalio.worker import Replayer, Worker
 
-from sre_suite.execution.runtime import execution_key
+from sre_suite.demo_fixture.managed_contracts import ready_receipt
+from sre_suite.execution.runtime import ExecutionRuntime, execution_key
 from sre_suite.execution.temporal_activities import Activities, heartbeat
 from sre_suite.execution.temporal_workflow import TicketExecution
+from sre_suite.execution.wire import canonical
 from sre_suite.fixtures.contracts import FixtureRequest
 from sre_suite.fixtures.temporal import FixtureAssessment
 from sre_suite.previews import PreviewRegistry
@@ -69,6 +71,10 @@ class FixtureWorkflowTests(unittest.IsolatedAsyncioTestCase):
         self.run_attempts = 0
         self.assess_attempts = 0
         self.certificate = None
+        self.managed_mode = False
+        self.export_failed = False
+        self.export_complete = False
+        self.target_stopped = False
 
     def worker(self, queue, workflows, activities):
         return Worker(
@@ -150,6 +156,10 @@ class FixtureWorkflowTests(unittest.IsolatedAsyncioTestCase):
     @activity.defn(name="collect_telemetry")
     def collect(self, raw):
         heartbeat()
+        if self.managed_mode:
+            self.assertTrue(self.export_complete)
+            self.assertGreater(self.assess_attempts, 0)
+            self.assertTrue(self.target_stopped)
         schedule = TelemetrySchedule.parse(raw["schedule"])
         with self.lock:
             if not self.collected:
@@ -167,6 +177,99 @@ class FixtureWorkflowTests(unittest.IsolatedAsyncioTestCase):
     def verify(self, raw):
         self.certificate = self.f.v.engine.run(raw, publish=True, heartbeat=heartbeat)
         return self.certificate
+
+    def enable_managed(self):
+        self.managed_mode = True
+        self.engineering.config["demo"] = {
+            "policy_sha256": "d" * 64,
+            "task_queue": "synthetic-managed",
+            "startup_seconds": 5,
+            "settle_seconds": 1,
+        }
+        self.engineering.telemetry["delay_seconds"] = 5
+        self.engineering.path.write_text(canonical(self.engineering.config))
+        self.engineering.telemetry_path.write_text(canonical(self.engineering.telemetry))
+        old = self.engineering.runtime
+        self.engineering.runtime = ExecutionRuntime(
+            old.settings,
+            jira=old.jira,
+            github=old.github,
+            evidence=old.evidence,
+            tests=old.tests,
+            clock=self.live,
+        )
+        self.activities = Activities(self.engineering.runtime)
+
+    def managed(self):
+        return self.worker(
+            "synthetic-managed", [], [self.serve_demo, self.ready_demo, self.export_demo]
+        )
+
+    @activity.defn(name="serve_demo_target")
+    def serve_demo(self, raw):
+        try:
+            while True:
+                heartbeat()
+                time.sleep(0.02)
+        finally:
+            self.target_stopped = True
+
+    @activity.defn(name="ready_demo_target")
+    def ready_demo(self, raw):
+        request = FixtureRequest.parse(raw)
+        return ready_receipt(request.identity, request.demo, request.binding)
+
+    @activity.defn(name="export_demo_telemetry")
+    def export_demo(self, raw):
+        if self.export_failed:
+            raise ApplicationError("synthetic permanent ingest failure", non_retryable=True)
+        request = FixtureRequest.parse(raw)
+        self.export_complete = True
+        return {
+            "workflow_id": request.identity,
+            "policy_sha256": request.demo["policy_sha256"],
+            "outbox_sha256": "e" * 64,
+            "delivered_batches": 2,
+            "completed_at": self.live().isoformat(),
+        }
+
+    async def test_managed_export_and_assessment_precede_engineering_collection(self):
+        self.enable_managed()
+        async with (
+            self.parent(),
+            self.runner(),
+            self.assessor(),
+            self.managed(),
+            self.telemetry(),
+            self.verifier(),
+        ):
+            h = await self.start()
+            result = await h.result()
+        self.assertEqual(result["outcome"], "ready_for_review")
+        self.assertEqual(self.certificate["verdict"], "PASSED")
+        self.assertTrue(self.collected)
+        self.assertTrue(self.target_stopped)
+        await Replayer(workflows=[TicketExecution]).replay_workflow(await h.fetch_history())
+
+    async def test_managed_export_failure_blocks_collection_and_certification(self):
+        self.enable_managed()
+        self.export_failed = True
+        async with (
+            self.parent(),
+            self.runner(),
+            self.assessor(),
+            self.managed(),
+            self.telemetry(),
+            self.verifier(),
+        ):
+            h = await self.start()
+            result = await h.result()
+        self.assertEqual(result["outcome"], "blocked")
+        self.assertEqual(result["failed_stage"], "managed_demo")
+        self.assertFalse(self.collected)
+        self.assertEqual(self.assess_attempts, 0)
+        self.assertIsNone(self.certificate)
+        self.assertTrue(self.target_stopped)
 
     async def start(self):
         h = await self.env.client.start_workflow(
@@ -333,3 +436,30 @@ class FixtureCommandTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(options["task_queue"], f.policy.assessor_queue)
                 self.assertEqual(options["id_reuse_policy"], WorkflowIDReusePolicy.REJECT_DUPLICATE)
                 self.assertEqual(options["id_conflict_policy"], WorkflowIDConflictPolicy.FAIL)
+
+                # Managed start must be authorized before any Temporal connection.
+                from sre_suite.execution.wire import digest
+
+                f.request["plan"]["demo"] = {
+                    "policy_sha256": "d" * 64,
+                    "task_queue": "demo-lifecycle",
+                    "startup_seconds": 5,
+                    "settle_seconds": 1,
+                }
+                f.request["plan"]["digest"] = digest(
+                    {k: v for k, v in f.request["plan"].items() if k != "digest"}
+                )
+                request.write_text(canonical(f.request))
+                connect.reset_mock()
+                with self.assertRaises(ValueError):
+                    await run(args)
+                connect.assert_not_awaited()
+                args.authorize_demo = True
+
+                async def change_after_authorization():
+                    request.write_text("{}")
+                    return client
+
+                connect.side_effect = change_after_authorization
+                await run(args)
+                self.assertEqual(client.start_workflow.call_args.args[1], f.request)

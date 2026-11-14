@@ -310,6 +310,50 @@ class LifecycleTests(LocalFixture):
         self.assertFalse(any("rm" in cmd or "prune" in cmd for cmd in commands))
         self.assertTrue((self.stack / "credentials.json").exists())
 
+    def test_optional_demo_worker_is_supervised_and_waits_for_its_activity_queue(self):
+        from unittest.mock import AsyncMock
+
+        self.initialize()
+        children = [Mock(), Mock(), Mock()]
+        postgres = ModuleType("sre_suite.postgres")
+        postgres.migrate = Mock()
+        argv, env, queue = ["synthetic-demo-worker"], {"ROLE": "demo"}, "demo-lifecycle"
+        notify = Mock()
+        with (
+            patch("sre_suite.local_pilot.demo.prepare", return_value=(argv, env, queue)),
+            patch("sre_suite.local_pilot.lifecycle.command", return_value="owned-container"),
+            patch("sre_suite.local_pilot.lifecycle.volume", return_value="owned-volume"),
+            patch("sre_suite.local_pilot.lifecycle.check_ports"),
+            patch("sre_suite.local_pilot.lifecycle.require_local_docker"),
+            patch("sre_suite.local_pilot.lifecycle.postgres_ready"),
+            patch("sre_suite.local_pilot.lifecycle.api_ready"),
+            patch("sre_suite.local_pilot.lifecycle.health", return_value={}),
+            patch(
+                "sre_suite.local_pilot.lifecycle.temporal_ready", new_callable=AsyncMock
+            ) as ready,
+            patch(
+                "sre_suite.local_pilot.lifecycle.wait_ready", side_effect=lambda probe, **_: probe()
+            ),
+            patch.dict("sys.modules", {"sre_suite.postgres": postgres}),
+            patch("sre_suite.local_pilot.lifecycle.spawn", side_effect=children) as spawn,
+            patch("sre_suite.local_pilot.lifecycle.stop_process") as stop,
+        ):
+            up(
+                self.stack,
+                self.config,
+                None,
+                notify=notify,
+                stopping=lambda: True,
+                demo_config=self.root / "demo.json",
+                demo_credentials=self.root / "creds.json",
+                authorize_demo=True,
+            )
+        self.assertEqual(spawn.call_args_list[-1].args, (argv, env))
+        ready.assert_any_await(self.config, activity_queue=queue)
+        self.assertEqual([c.args[0] for c in stop.call_args_list], list(reversed(children)))
+        self.assertTrue(notify.call_args.args[0]["demo_worker_started"])
+        self.assertFalse(notify.call_args.args[0]["execution_started"])
+
     def test_service_health_and_invalid_credential_reload_fail_closed(self):
         api = Mock(return_value=[b"{}"])
         reload = Mock(side_effect=ValueError("private detail"))

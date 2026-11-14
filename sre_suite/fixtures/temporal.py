@@ -20,6 +20,7 @@ from temporalio.exceptions import (
 with workflow.unsafe.imports_passed_through():
     from ..api import evidence_id
     from ..api_wire import decode, evidence_from_wire, fields, text
+    from ..demo_fixture.managed_contracts import ready_receipt, validate_export
     from ..execution.process import ExecutionBlocked, run_process
     from ..execution.temporal_activities import heartbeat
     from ..execution.wire import canonical
@@ -137,7 +138,39 @@ class FixtureAssessment:
             retry_policy=RetryPolicy(initial_interval=timedelta(seconds=1), maximum_attempts=3),
             cancellation_type=workflow.ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
         )
+        target = None
         try:
+            if request.demo:
+                demo = request.demo
+                launch = request.start - timedelta(seconds=demo["startup_seconds"])
+                if workflow.now() < launch:
+                    await workflow.sleep(launch - workflow.now())
+                target = workflow.start_activity(
+                    "serve_demo_target",
+                    raw,
+                    task_queue=demo["task_queue"],
+                    start_to_close_timeout=timedelta(seconds=500),
+                    schedule_to_close_timeout=timedelta(seconds=550),
+                    heartbeat_timeout=timedelta(seconds=5),
+                    retry_policy=RetryPolicy(
+                        initial_interval=timedelta(seconds=1), maximum_attempts=3
+                    ),
+                    cancellation_type=workflow.ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+                )
+                ready = await workflow.execute_activity(
+                    "ready_demo_target",
+                    raw,
+                    task_queue=demo["task_queue"],
+                    start_to_close_timeout=timedelta(seconds=min(65, demo["startup_seconds"])),
+                    schedule_to_close_timeout=timedelta(seconds=demo["startup_seconds"]),
+                    heartbeat_timeout=timedelta(seconds=5),
+                    retry_policy=RetryPolicy(
+                        initial_interval=timedelta(seconds=1), maximum_attempts=10
+                    ),
+                    cancellation_type=workflow.ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+                )
+                if ready != ready_receipt(request.identity, demo, request.binding):
+                    raise ValueError("managed readiness binding mismatch")
             if workflow.now() < request.start:
                 await workflow.sleep(request.start - workflow.now())
             artifact = await workflow.execute_activity(
@@ -146,6 +179,24 @@ class FixtureAssessment:
                 task_queue=request.dispatch["runner_queue"],
                 **options,
             )
+            if request.demo:
+                cutoff = request.end - timedelta(seconds=request.demo["settle_seconds"])
+                remaining = cutoff - workflow.now()
+                if remaining <= timedelta(0):
+                    raise ValueError("managed export window was missed")
+                export = await workflow.execute_activity(
+                    "export_demo_telemetry",
+                    raw,
+                    task_queue=request.demo["task_queue"],
+                    start_to_close_timeout=min(timedelta(seconds=65), remaining),
+                    schedule_to_close_timeout=remaining,
+                    heartbeat_timeout=timedelta(seconds=5),
+                    retry_policy=RetryPolicy(
+                        initial_interval=timedelta(seconds=1), maximum_attempts=5
+                    ),
+                    cancellation_type=workflow.ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+                )
+                validate_export(export, request.identity, request.demo, request.start, request.end)
             if workflow.now() < request.end:
                 await workflow.sleep(request.end - workflow.now())
             reference = await workflow.execute_activity(
@@ -160,7 +211,12 @@ class FixtureAssessment:
                 task_queue=request.dispatch["task_queue"],
                 **options,
             )
+            if target is not None and target.done():
+                await target
+                raise ValueError("managed target ended before assessment completed")
             return result
+        except ValueError:
+            return {"outcome": "blocked", "reason": "managed_demo_failed", "evidence": None}
         except asyncio.CancelledError:
             raise
         except ActivityError as error:
@@ -171,3 +227,11 @@ class FixtureAssessment:
                 "reason": "fixture_or_assessment_failed",
                 "evidence": None,
             }
+
+        finally:
+            if target is not None:
+                target.cancel()
+                try:
+                    await asyncio.shield(target)
+                except (asyncio.CancelledError, ActivityError):
+                    pass

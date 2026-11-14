@@ -68,6 +68,7 @@ class TicketExecution:
                     break
             arguments: dict[str, Any] = {"reference": reference, "results": results}
             fixture_child = None
+            managed_assessment = None
             # Recorded prepare output keeps pre-integration histories on their original path.
             if (
                 reference.get("telemetry_required")
@@ -101,6 +102,20 @@ class TicketExecution:
                             parent_close_policy=workflow.ParentClosePolicy.REQUEST_CANCEL,
                             cancellation_type=workflow.ChildWorkflowCancellationType.WAIT_CANCELLATION_COMPLETED,
                         )
+                if (
+                    fixture_child is not None
+                    and self.certificate_plan
+                    and self.certificate_plan.get("demo")
+                ):
+                    self.state = "running_managed_demo"
+                    managed_assessment = await fixture_child
+                    if managed_assessment.get("outcome") != "assessed":
+                        self.state = "blocked"
+                        return {
+                            "outcome": "blocked",
+                            "failed_stage": "managed_demo",
+                            "jira_reported": False,
+                        }
                 self.state = "collecting_telemetry"
                 reports = await asyncio.gather(
                     *(
@@ -132,7 +147,11 @@ class TicketExecution:
                     automatic_fixture = None
                     if fixture_child is not None:
                         self.state = "assessing_fixtures"
-                        assessment = await fixture_child
+                        assessment = (
+                            managed_assessment
+                            if managed_assessment is not None
+                            else await fixture_child
+                        )
                         if assessment.get("outcome") == "assessed":
                             automatic_fixture = assessment.get("evidence")
                         else:

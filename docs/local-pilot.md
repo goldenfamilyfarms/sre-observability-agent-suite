@@ -127,3 +127,7 @@ These tests remove only their own verified test volume. They make no Jira/GitHub
 `python -m sre_suite.local_pilot handoff --help` describes the guarded bridge from a published Jira plan to read-only execution preflight. It reuses this stack and the private worker configuration without starting services or a workflow. See the [handoff guide](planning-handoff.md).
 
 For optional candidate-bound Prometheus/Loki/Tempo observations, follow the [engineering telemetry guide](engineering-telemetry.md). This requires a separate telemetry worker and independently authorized preview setup; it does not grant deployment permission.
+
+## Managed local demo option
+
+Version 0.20 supports [managed target startup and durable export](managed-demo-pilot.md) within an explicitly started pilot. The optional reviewed dispatch preserves exact artifact, plan, preview ID and generation checks and orders export/assessment before telemetry collection. Separate worker authorization and private role credentials are required.

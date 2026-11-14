@@ -5,6 +5,7 @@ import hmac
 import socket
 import sqlite3
 import ssl
+from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any
 
@@ -26,7 +27,11 @@ def credential(value: str) -> str:
 
 
 def handler(
-    controller: Controller, fixture_hash: str, metrics_hash: str
+    controller: Controller,
+    fixture_hash: str,
+    metrics_hash: str,
+    lifecycle_hash: str | None = None,
+    ready: Callable[[], dict[str, Any]] | None = None,
 ) -> type[BaseHTTPRequestHandler]:
     if fixture_hash == metrics_hash or any(len(v) != 64 for v in (fixture_hash, metrics_hash)):
         raise ValueError("separate fixture and scrape credentials required")
@@ -88,6 +93,15 @@ def handler(
                 self.reply(409, b'{"error":"fixture blocked"}')
 
         def do_GET(self) -> None:
+            if self.path == "/ready" and lifecycle_hash is not None and ready is not None:
+                if not self.authorized(lifecycle_hash):
+                    self.reply(401, b'{"error":"unauthorized"}')
+                    return
+                try:
+                    self.reply(200, canonical(ready()).encode())
+                except Exception:
+                    self.reply(409, b'{"error":"target unavailable"}')
+                return
             if not self.authorized(metrics_hash):
                 self.reply(401, b'{"error":"unauthorized"}')
             elif self.path != "/metrics":
@@ -110,10 +124,20 @@ def handler(
 
 
 def server(
-    controller: Controller, fixture_token: str, metrics_token: str, cert: str, key: str, port: int
+    controller: Controller,
+    fixture_token: str,
+    metrics_token: str,
+    cert: str,
+    key: str,
+    port: int,
+    *,
+    lifecycle_token: str | None = None,
+    ready: Callable[[], dict[str, Any]] | None = None,
 ) -> HTTPServer:
     if type(port) is not int or not 0 <= port <= 65535:
         raise ValueError("invalid listen port")
+    if lifecycle_token is not None and lifecycle_token in {fixture_token, metrics_token}:
+        raise ValueError("lifecycle readiness requires a separate credential")
     tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     tls.minimum_version = ssl.TLSVersion.TLSv1_2
     tls.load_cert_chain(cert, key)
@@ -130,5 +154,11 @@ def server(
 
     return TlsServer(
         ("127.0.0.1", port),
-        handler(controller, credential(fixture_token), credential(metrics_token)),
+        handler(
+            controller,
+            credential(fixture_token),
+            credential(metrics_token),
+            credential(lifecycle_token) if lifecycle_token else None,
+            ready,
+        ),
     )

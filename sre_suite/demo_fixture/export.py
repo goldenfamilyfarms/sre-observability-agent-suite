@@ -1,6 +1,6 @@
 """Explicit, bounded outbox delivery. OTLP/Loki delivery is at least once, never fabricated."""
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -62,9 +62,15 @@ def acknowledge(signal: str, value: object) -> None:
             raise ValueError("OTLP rejected or warned about telemetry")
 
 
-def flush(controller: Controller, clients: dict[str, Any], journal: Journal) -> int:
+def flush(
+    controller: Controller,
+    clients: dict[str, Any],
+    journal: Journal,
+    guard: Callable[[], None] = lambda: None,
+) -> int:
     count = 0
-    with journal.locked("demo-export", lambda: None):
+    with journal.locked("demo-export", guard):
+        guard()
         controller.guard()
         with controller.connect() as conn:
             pending = conn.execute(
@@ -72,12 +78,14 @@ def flush(controller: Controller, clients: dict[str, Any], journal: Journal) -> 
                 "ORDER BY key,signal LIMIT 2"
             ).fetchall()
         for key, signal, payload in pending:
+            guard()
             from ..api_wire import decode
 
             controller.guard()
             path = "/v1/traces" if signal == "traces" else "/loki/api/v1/push"
             result = clients[signal].call("POST", path, decode(payload.encode()))
             acknowledge(signal, result)
+            guard()
             controller.guard()
             with controller.connect() as conn:
                 conn.execute(

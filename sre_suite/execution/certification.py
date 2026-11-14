@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 class EngineeringCertification:
     def __init__(self, path: Path, telemetry: "EngineeringTelemetry | None") -> None:
+        from ..demo_fixture.managed_contracts import demo_dispatch
         from ..fixtures.contracts import dispatch
         from ..verification.config import private_document
 
@@ -29,9 +30,17 @@ class EngineeringCertification:
         row = envelope(
             raw,
             {"policy", "task_queue", "fixture_wait_seconds"}
-            | ({"fixture"} if isinstance(raw, dict) and "fixture" in raw else set()),
+            | ({"fixture"} if isinstance(raw, dict) and "fixture" in raw else set())
+            | ({"demo"} if isinstance(raw, dict) and "demo" in raw else set()),
         )
         self.fixture = dispatch(row["fixture"]) if "fixture" in row else None
+        self.demo = demo_dispatch(row["demo"]) if "demo" in row else None
+        if self.demo and (
+            not self.fixture
+            or self.demo["task_queue"]
+            in {self.fixture["runner_queue"], self.fixture["task_queue"], row["task_queue"]}
+        ):
+            raise ValueError("managed demo requires independent fixture and lifecycle queues")
         self.policy = VerificationPolicy.parse(row["policy"])
         self.queue = text(row["task_queue"], 80)
         self.wait = row["fixture_wait_seconds"]
@@ -46,6 +55,14 @@ class EngineeringCertification:
             raise ValueError("fixture wait must be 1..600 seconds")
         if telemetry is None or self.policy.scope != telemetry.policy.scope:
             raise ValueError("certification requires matching engineering telemetry")
+        if self.demo and (
+            telemetry.delay < self.demo["startup_seconds"]
+            or telemetry.window <= self.demo["settle_seconds"]
+            or self.demo["task_queue"] == telemetry.queue
+        ):
+            raise ValueError(
+                "managed demo requires startup/settlement budgets and a dedicated queue"
+            )
         if self.policy.collector != telemetry.producer:
             raise ValueError("certification collector differs from engineering telemetry")
         expected = {p.id: p for p in telemetry.policy.profiles}
@@ -66,6 +83,7 @@ class EngineeringCertification:
                 "queue": self.queue,
                 "wait": self.wait,
                 **({"fixture": self.fixture} if self.fixture else {}),
+                **({"demo": self.demo} if self.demo else {}),
             }
         )
 
@@ -79,6 +97,8 @@ class EngineeringCertification:
         start, end = schedules[0].request.start, schedules[0].request.end
         if any((s.request.start, s.request.end) != (start, end) for s in schedules):
             raise ValueError("certification requires a single exact observation window")
+        if self.demo and (end - start).total_seconds() <= self.demo["settle_seconds"]:
+            raise ValueError("demo window has no export settlement budget")
         release = Release(
             self.policy.scope,
             telemetry["binding"]["artifact_digest"],
@@ -99,6 +119,7 @@ class EngineeringCertification:
                     "fixture_wait_seconds": self.wait,
                     "telemetry_plan": telemetry["digest"],
                     **({"fixture": self.fixture} if self.fixture else {}),
+                    **({"demo": self.demo} if self.demo else {}),
                 }
             )
         )

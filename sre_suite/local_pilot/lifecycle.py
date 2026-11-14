@@ -208,7 +208,9 @@ def postgres_ready(root: Path, config: LocalConfig) -> None:
         db.execute("SELECT 1")
 
 
-async def temporal_ready(config: LocalConfig, *, worker: bool = False) -> None:
+async def temporal_ready(
+    config: LocalConfig, *, worker: bool = False, activity_queue: str | None = None
+) -> None:
     from temporalio.api.enums.v1 import TaskQueueType
     from temporalio.api.taskqueue.v1 import TaskQueue
     from temporalio.api.workflowservice.v1 import DescribeNamespaceRequest, DescribeTaskQueueRequest
@@ -219,15 +221,17 @@ async def temporal_ready(config: LocalConfig, *, worker: bool = False) -> None:
         await client.workflow_service.describe_namespace(
             DescribeNamespaceRequest(namespace=config.name)
         )
-        if worker:
+        if worker or activity_queue:
             for kind in (
                 TaskQueueType.TASK_QUEUE_TYPE_WORKFLOW,
                 TaskQueueType.TASK_QUEUE_TYPE_ACTIVITY,
             ):
+                if activity_queue and kind == TaskQueueType.TASK_QUEUE_TYPE_WORKFLOW:
+                    continue
                 result = await client.workflow_service.describe_task_queue(
                     DescribeTaskQueueRequest(
                         namespace=config.name,
-                        task_queue=TaskQueue(name=config.name),
+                        task_queue=TaskQueue(name=activity_queue or config.name),
                         task_queue_type=kind,
                     )
                 )
@@ -268,11 +272,21 @@ def up(
     *,
     notify: Callable[[dict[str, Any]], None],
     stopping: Callable[[], bool],
+    demo_config: Path | None = None,
+    demo_credentials: Path | None = None,
+    authorize_demo: bool = False,
 ) -> None:
     phase = "configuration"
     children: list[subprocess.Popen[bytes]] = []
     container: str | None = None
     try:
+        demo = None
+        if demo_config is not None or demo_credentials is not None or authorize_demo:
+            if demo_config is None or demo_credentials is None:
+                raise ValueError("both demo policy and credentials are required")
+            from .demo import prepare as prepare_demo
+
+            demo = prepare_demo(root, config, demo_config, demo_credentials, authorize_demo)
         worker_env = execution_environment(root, config, worker_file) if worker_file else None
         if worker_env is not None:
             Settings.from_env(worker_env)
@@ -326,11 +340,21 @@ def up(
                         processes=children,
                         stopping=stopping,
                     )
+                if demo is not None:
+                    phase = "demo_worker"
+                    argv, env, queue = demo
+                    children.append(spawn(argv, env))
+                    wait_ready(
+                        lambda: asyncio.run(temporal_ready(config, activity_queue=queue)),
+                        processes=children,
+                        stopping=stopping,
+                    )
                 notify(
                     {
                         "status": "ready",
                         "worker_started": worker_env is not None,
                         "execution_started": False,
+                        "demo_worker_started": demo is not None,
                         "services": health(root, config),
                     }
                 )

@@ -43,15 +43,21 @@ async def run(args: argparse.Namespace) -> None:
     queue = os.environ.get("SRE_TEMPORAL_TASK_QUEUE", "sre-engineering-v1")
     if args.command == "worker":
         settings = Settings.from_env(os.environ)
-        activities = Activities(ExecutionRuntime(settings))
+        runtime = ExecutionRuntime(settings)
+        activities = Activities(runtime)
+        stage_only = bool(runtime.roles and settings.worker_role != "controller")
+        if runtime.roles:
+            queue = runtime.roles.bindings[str(settings.worker_role)]["queue"]
         with ThreadPoolExecutor(max_workers=2) as executor:
             worker = Worker(
                 client,
                 task_queue=queue,
-                workflows=[TicketExecution],
-                activities=[
+                workflows=[] if stage_only else [TicketExecution],
+                activities=[activities.stage]
+                if stage_only
+                else [
                     activities.prepare,
-                    activities.stage,
+                    *([] if runtime.roles else [activities.stage]),
                     activities.finish,
                     activities.telemetry,
                     activities.certification,

@@ -34,8 +34,26 @@ def main() -> None:
     transfer.add_argument("--node", required=True)
     transfer.add_argument("--run-id", required=True)
     transfer.add_argument("--output", type=Path, required=True)
+    for name in ("epic-inspect", "epic-publish"):
+        command = commands.add_parser(name)
+        command.add_argument("--binding", type=Path, required=True)
+        if name == "epic-publish":
+            command.add_argument("--journal", type=Path, required=True)
     args = parser.parse_args()
     try:
+        if args.command.startswith("epic-"):
+            from ..control.contracts import Binding
+            from ..verification.config import private_document
+            from .epic import EpicAgent
+
+            agent = EpicAgent(
+                Planner.from_env(os.environ), Binding.parse(private_document(args.binding))
+            )
+            result = (
+                agent.publish(args.journal) if args.command == "epic-publish" else agent.inspect()
+            )
+            print(canonical(result))
+            return
         if args.command == "handoff":
             from .handoff import handoff
 

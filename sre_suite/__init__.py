@@ -1,1 +1,1 @@
-"""Local foundation. No live integrations or deployment executors are installed."""
+"""Scoped SRE agents with explicit private configuration and governed provider operations."""

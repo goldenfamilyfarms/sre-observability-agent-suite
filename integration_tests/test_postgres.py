@@ -80,7 +80,7 @@ class DatabaseFixture(unittest.TestCase):
 
 class MigrationTests(DatabaseFixture):
     def test_clean_install_and_idempotent_retry(self):
-        self.assertEqual(migrate(DSN, self.schema), (1, 2))
+        self.assertEqual(migrate(DSN, self.schema), (1, 2, 3))
         self.assertEqual(migrate(DSN, self.schema), ())
         db = self.connection()
         rows = db.execute(
@@ -97,23 +97,23 @@ class MigrationTests(DatabaseFixture):
         )
         with self.assertRaisesRegex(ValueError, "pending"):
             PostgresCheckpoints(DSN, self.scope, self.schema)
-        self.assertEqual(migrate(DSN, self.schema), (2,))
+        self.assertEqual(migrate(DSN, self.schema), (2, 3))
         checkpoint = self.keep(PostgresCheckpoints(DSN, self.scope, self.schema))
         self.assertEqual(checkpoint.load("run"), (1, "ready"))
 
     def test_failing_migration_rolls_back_ddl_history_and_schema_creation(self):
-        broken = Migration(3, "003_broken.sql", "CREATE TABLE rollback_probe(id INT); SELECT 1/0;")
+        broken = Migration(4, "004_broken.sql", "CREATE TABLE rollback_probe(id INT); SELECT 1/0;")
         with patch("sre_suite.postgres.migrations", return_value=migrations() + (broken,)):
             with self.assertRaises(psycopg.errors.DivisionByZero):
                 migrate(DSN, self.schema)
         db = self.connection()
         self.assertIsNone(db.execute("SELECT to_regnamespace(%s)", (self.schema,)).fetchone()[0])
-        self.assertEqual(migrate(DSN, self.schema), (1, 2))
+        self.assertEqual(migrate(DSN, self.schema), (1, 2, 3))
         with patch("sre_suite.postgres.migrations", return_value=migrations() + (broken,)):
             with self.assertRaises(psycopg.errors.DivisionByZero):
                 migrate(DSN, self.schema)
         self.assertIsNone(db.execute("SELECT to_regclass('rollback_probe')").fetchone()[0])
-        self.assertEqual(db.execute("SELECT count(*) FROM schema_migrations").fetchone()[0], 2)
+        self.assertEqual(db.execute("SELECT count(*) FROM schema_migrations").fetchone()[0], 3)
 
     def test_checksum_changes_unknown_versions_and_gaps_are_rejected(self):
         migrate(DSN, self.schema)
@@ -148,7 +148,7 @@ class MigrationTests(DatabaseFixture):
     def test_concurrent_migrators_apply_each_version_once(self):
         self.assertEqual(self.race(lambda _: migrate(DSN, self.schema)), ["committed", "committed"])
         self.assertEqual(
-            self.connection().execute("SELECT count(*) FROM schema_migrations").fetchone()[0], 2
+            self.connection().execute("SELECT count(*) FROM schema_migrations").fetchone()[0], 3
         )
 
     def test_invalid_existing_scope_aborts_upgrade_without_rewriting_data(self):

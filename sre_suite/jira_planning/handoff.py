@@ -108,6 +108,7 @@ async def handoff(
             ReadOnlyHttp(source.evidence.http, pulse, evidence=True),
         ),
         source.clock,
+        control=source.control,
     )
     keys = publication_keys(plan, readonly, decode(_read(publication_path, 32_768)))
     selected = [node for node in plan.nodes if node.id == node_id]
@@ -132,6 +133,7 @@ async def handoff(
         if journal_state(journal, plan, readonly, keys) != state:
             raise ValueError("planning journal changed during handoff")
         readonly.guard(plan, state["context_version"])
+        readonly.require_authorization(plan, state["context_version"])
         for node in plan.order():
             fields = readonly.issue(plan, node, keys[node.id], allow_completed=node.id != node_id)
             if ticket_envelope(
@@ -142,6 +144,7 @@ async def handoff(
         if JiraClient(settings, readonly.http).get_ticket(keys[node_id], pulse) != expected_ticket:
             raise ValueError("selected runtime ticket differs from the published plan")
         readonly.guard(plan, state["context_version"])
+        readonly.require_authorization(plan, state["context_version"])
 
     verify()
     with tempfile.TemporaryDirectory(prefix=".handoff-probe-", dir=output.parent) as directory:

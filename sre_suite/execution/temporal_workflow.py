@@ -61,7 +61,14 @@ class TicketExecution:
                 result = await workflow.execute_activity(
                     "execute_stage",
                     {"reference": reference, "role": role, "results": results},
-                    **options,
+                    **{
+                        **options,
+                        **(
+                            {"task_queue": reference["role_dispatch"]["queues"][role]}
+                            if "role_dispatch" in reference
+                            else {}
+                        ),
+                    },
                 )
                 results.append(result)
                 if result["verdict"] != "passed":

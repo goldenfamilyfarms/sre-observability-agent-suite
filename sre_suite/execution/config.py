@@ -127,6 +127,8 @@ class Settings:
     evidence_ca_file: str | None = None
     telemetry_config: str | None = None
     certification_config: str | None = None
+    roles_config: str | None = None
+    worker_role: str | None = None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> "Settings":
@@ -205,7 +207,9 @@ class Settings:
             tuple(command),
             required(env, "SRE_CLAUDE_BINARY"),
             required(env, "SRE_CLAUDE_MODEL"),
-            required(env, "ANTHROPIC_API_KEY"),
+            ""
+            if env.get("SRE_ENGINEERING_ROLE") in {"controller", "test"}
+            else required(env, "ANTHROPIC_API_KEY"),
             flag(env, "SRE_CLAUDE_ENABLED"),
             timeout,
             budget,
@@ -216,6 +220,8 @@ class Settings:
             env.get("SRE_EVIDENCE_CA_FILE") or None,
             env.get("SRE_ENGINEERING_TELEMETRY_CONFIG") or None,
             env.get("SRE_ENGINEERING_CERTIFICATION_CONFIG") or None,
+            env.get("SRE_ENGINEERING_ROLES_CONFIG") or None,
+            env.get("SRE_ENGINEERING_ROLE") or None,
         )
 
 

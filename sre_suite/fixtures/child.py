@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from ..api_wire import decode, fields
-from ..execution.http import RemoteError
+from ..execution.http import JsonHttp, RemoteError
 from ..execution.journal import Journal
 from ..execution.wire import canonical
 from ..telemetry.schedule_config import private_path
@@ -30,11 +30,25 @@ def main() -> int:
         if len(raw) > 65536:
             raise ValueError("fixture request budget exceeded")
         value = fields(decode(raw), {"request", "reference"})
+        chosen_target: JsonHttp | None = None
+        if args.operation == "execute":
+            if policy.journeys:
+                from .journeys import JourneyTarget
+
+                chosen_target = JourneyTarget(
+                    policy.journeys,
+                    policy.fingerprint,
+                    os.environ,
+                    client(os.environ),
+                    Journal(args.journal),
+                )
+            else:
+                chosen_target = target(policy, os.environ)
         runtime = FixtureRuntime(
             policy,
             client(os.environ),
             Journal(args.journal),
-            target=target(policy, os.environ) if args.operation == "execute" else None,
+            target=chosen_target,
         )
         if args.operation == "execute":
             result = runtime.execute(value["request"])

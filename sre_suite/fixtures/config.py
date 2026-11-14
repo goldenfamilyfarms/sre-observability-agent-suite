@@ -18,7 +18,11 @@ def environment(policy: FixturePolicy, role: str, env: Mapping[str, str]) -> dic
         raise ValueError("invalid fixture role")
     result = evidence_environment(env)
     if role == "runner":
-        for name in (policy.authorization_env, policy.ca_env):
+        names = [policy.authorization_env, policy.ca_env]
+        if policy.journeys:
+            for origin in policy.journeys["origins"].values():
+                names.extend([origin["authorization_env"], origin["ca_env"]])
+        for name in names:
             if name and name in env:
                 result[name] = env[name]
     return result

@@ -201,7 +201,7 @@ class StackTests(unittest.TestCase):
                 db.execute(
                     "SELECT version FROM sre_suite.schema_migrations ORDER BY version"
                 ).fetchall(),
-                [(1,), (2,)],
+                [(1,), (2,), (3,)],
             )
 
         async def history(create):

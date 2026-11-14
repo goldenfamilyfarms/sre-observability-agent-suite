@@ -1,6 +1,7 @@
 """Explicit planning commands; credentials come only from private environment variables."""
 
 import argparse
+import asyncio
 import json
 import os
 from pathlib import Path
@@ -26,8 +27,31 @@ def main() -> None:
     publish.add_argument("plan", type=Path)
     publish.add_argument("--approve-digest", required=True)
     publish.add_argument("--journal", type=Path, required=True)
+    transfer = commands.add_parser("handoff")
+    transfer.add_argument("plan", type=Path)
+    transfer.add_argument("--publication", type=Path, required=True)
+    transfer.add_argument("--journal", type=Path, required=True)
+    transfer.add_argument("--node", required=True)
+    transfer.add_argument("--run-id", required=True)
+    transfer.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
+        if args.command == "handoff":
+            from .handoff import handoff
+
+            result = asyncio.run(
+                handoff(
+                    os.environ,
+                    args.plan,
+                    args.publication,
+                    args.journal,
+                    args.node,
+                    args.run_id,
+                    args.output,
+                )
+            )
+            print(json.dumps(result))
+            raise SystemExit(result["preflight_exit_code"])
         planner = Planner.from_env(os.environ, discovery_only=args.command == "discover")
         if args.command == "discover":
             print(json.dumps(planner.discover()))

@@ -1,6 +1,7 @@
 """Local pilot commands are explicit: initialize, start services, inspect, then execute."""
 
 import argparse
+import asyncio
 import json
 import secrets
 import signal
@@ -23,11 +24,19 @@ def main() -> None:
     init.add_argument("--postgres-port", type=int, default=55432)
     init.add_argument("--temporal-port", type=int, default=7233)
     init.add_argument("--api-port", type=int, default=8443)
-    for name in ("up", "check", "serve", "run"):
+    for name in ("up", "check", "serve", "run", "handoff"):
         sub = commands.add_parser(name)
         sub.add_argument("--directory", required=True, type=Path)
-        if name in {"up", "run"}:
-            sub.add_argument("--worker-env", type=Path)
+        if name in {"up", "run", "handoff"}:
+            sub.add_argument("--worker-env", type=Path, required=name == "handoff")
+        if name == "handoff":
+            sub.add_argument("--plan", type=Path, required=True)
+            sub.add_argument("--publication", type=Path, required=True)
+            sub.add_argument("--planning-journal", type=Path, required=True)
+            sub.add_argument("--issue-type-id", required=True)
+            sub.add_argument("--node", required=True)
+            sub.add_argument("--run-id", required=True)
+            sub.add_argument("--output", type=Path, required=True)
         if name == "check":
             sub.add_argument("--worker", action="store_true")
         if name == "run":
@@ -58,6 +67,25 @@ def main() -> None:
             result = health(args.directory, config, worker=args.worker)
             print(json.dumps({"services": result, "worker_checked": args.worker}))
             raise SystemExit(0 if all(v == "ready" for v in result.values()) else 1)
+        elif args.command == "handoff":
+            from ..jira_planning.handoff import handoff
+
+            require_local_docker()
+            env = execution_environment(args.directory, config, args.worker_env)
+            env["SRE_JIRA_ISSUE_TYPE_ID"] = args.issue_type_id
+            result = asyncio.run(
+                handoff(
+                    env,
+                    args.plan,
+                    args.publication,
+                    args.planning_journal,
+                    args.node,
+                    args.run_id,
+                    args.output,
+                )
+            )
+            print(json.dumps(result))
+            raise SystemExit(result["preflight_exit_code"])
         elif args.command == "run":
             argv = args.execution_args
             if argv[:1] == ["--"]:

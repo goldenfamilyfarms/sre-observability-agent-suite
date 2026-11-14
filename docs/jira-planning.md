@@ -85,3 +85,7 @@ The journal records delivery intent/results only. It is not a replacement for Te
 Tests use the real local authenticated evidence API with synthetic Jira responses. They cover DAG validation, metadata pagination, permission/type/field constraints, scoped evidence, preview replacement before/during writes, concurrent publishers, lost create/edit responses, persisted intent across restart, pre-request crashes, uncertain invisible issues, edited markers/contracts, final verification, private review files, redaction and execution-reader compatibility. They do not create real Jira issues or invoke Claude.
 
 API behavior follows Atlassian's [create issue and field metadata](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/), [enhanced JQL search](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/) and [issue properties](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-properties/). Live permissions, screen configuration, search visibility, field-size limits and automation must still be checked with private account configuration.
+
+## Hand off a published plan
+
+Use the [guarded handoff command](planning-handoff.md) to verify the publication mapping and retained journal, generate a specification for the selected actual Jira key, and run preflight with private runtime configuration. Workflow start remains a separate explicit command.

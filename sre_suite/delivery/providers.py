@@ -251,7 +251,12 @@ class KubernetesArgo:
         self.own(target, result)
         return result
 
-    def readiness(self, target: Target, expected_template: dict[str, Any]) -> dict[str, Any]:
+    def readiness(
+        self,
+        target: Target,
+        expected_template: dict[str, Any],
+        expected_resources: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
         app = self.read(self.application_path(target))
         if app is None:
             return {"ready": False, "reason": "application_missing"}
@@ -308,6 +313,30 @@ class KubernetesArgo:
             != [expected_image]
         ):
             return {"ready": False, "reason": "rollout_incomplete"}
+        if "reference_service" in target.raw:
+            if (
+                not expected_resources
+                or deployment.get("spec", {}).get("strategy", {}).get("type") != "Recreate"
+            ):
+                raise ValueError("reference readiness requires the complete reviewed package")
+            routes = {
+                "Service": "/api/v1/namespaces/{}/services/",
+                "PersistentVolumeClaim": "/api/v1/namespaces/{}/persistentvolumeclaims/",
+                "Ingress": "/apis/networking.k8s.io/v1/namespaces/{}/ingresses/",
+                "ServiceMonitor": "/apis/monitoring.coreos.com/v1/namespaces/{}/servicemonitors/",
+            }
+            for expected in expected_resources[1:]:
+                obj = self.read(routes[expected["kind"]].format(ns) + expected["metadata"]["name"])
+                if obj is None:
+                    return {"ready": False, "reason": "reference_resource_missing"}
+                self.own(target, obj)
+                if not contains_expected(obj, expected):
+                    raise ValueError("reference resource differs from approved package")
+                if (
+                    expected["kind"] == "PersistentVolumeClaim"
+                    and obj.get("status", {}).get("phase") != "Bound"
+                ):
+                    return {"ready": False, "reason": "reference_storage_pending"}
         running = []
         for pod in ps:
             self.own(target, pod)

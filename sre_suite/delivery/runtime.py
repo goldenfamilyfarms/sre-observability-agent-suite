@@ -170,7 +170,8 @@ class DeliveryRuntime:
         self.kubernetes.own(target, namespace)
         if app.get("spec") != application(self.request)["spec"]:
             raise ValueError("application changed after authorization")
-        status = self.kubernetes.readiness(target, resources(self.request)[0]["spec"]["template"])
+        rendered = resources(self.request)
+        status = self.kubernetes.readiness(target, rendered[0]["spec"]["template"], rendered)
         if not status["ready"]:
             return status
         # Saved observations never substitute for live deployment reads.

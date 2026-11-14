@@ -16,12 +16,21 @@ def main() -> int:
     profile = sub.add_parser("prepare-fixtures")
     profile.add_argument("--config", type=Path, required=True)
     profile.add_argument("--output", type=Path, required=True)
+    deployment = sub.add_parser("prepare-deployment")
+    deployment.add_argument("--config", type=Path, required=True)
+    deployment.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
         if args.command == "export-reference":
             export_reference(args.output)
         else:
-            result = prepare(private_document(args.config, 1_048_576))
+            value = private_document(args.config, 1_048_576)
+            if args.command == "prepare-deployment":
+                from .deployment import package
+
+                result = {"deployment-package": package(value)}
+            else:
+                result = prepare(value)
             args.output.mkdir(mode=0o700)
             for key, value in result.items():
                 path = args.output / (key.replace("_", "-") + ".json")

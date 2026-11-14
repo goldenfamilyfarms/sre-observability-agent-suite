@@ -10,6 +10,7 @@ Local validation on Python 3.13.14:
 | Real loopback HTTPS protocol tests | 19 passed |
 | Real PostgreSQL integration, migration 003 and control API | 41 passed |
 | Real Temporal replay, recovery, cancellation and container integration | 61 passed |
+| Real local pilot startup, worker readiness, persistent restart and TLS rejection | 2 passed |
 | Strict mypy, Ruff and formatting | Passed |
 | Local Git shipping transport | Included: exact fast-forward and concurrent-ref lease protection |
 | Helm 4.2.3 rendering | Pinned recipe rendered and matched the expected Kubernetes resources |

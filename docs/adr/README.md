@@ -23,3 +23,4 @@
 | [019](019-deterministic-certification.md) | Evidence-backed deterministic 120-check certification | Accepted for the source-candidate pilot |
 | [020](020-engineering-certification-gate.md) | Certification child workflow and current engineering readiness gate | Accepted for the opt-in pilot |
 | [021](021-independent-fixture-assessment.md) | Independent scenario execution and 120-check assessment | Accepted for the non-production pilot |
+| [022](022-demo-fixture-controller.md) | Pinned demo target, durable fixture effects and reviewed capability mapping | Accepted for the local non-production pilot |

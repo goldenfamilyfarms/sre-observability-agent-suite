@@ -34,9 +34,15 @@ class JsonHttp:
         headers: Mapping[str, str] | None = None,
         timeout: float = 20,
         local_ca_file: str | None = None,
+        expected_status: int | None = None,
     ) -> None:
         if not 0 < timeout <= 20:
             raise ValueError("invalid HTTP timeout")
+        if expected_status is not None and (
+            type(expected_status) is not int or not 200 <= expected_status <= 299
+        ):
+            raise ValueError("invalid expected HTTP acknowledgement")
+        self._expected_status = expected_status
         self.base = https_url(base, allow_loopback=bool(local_ca_file))
         self._authorization = authorization
         self._headers = dict(headers or {})
@@ -72,6 +78,8 @@ class JsonHttp:
         )
         try:
             with self._opener.open(request, timeout=self._timeout) as response:
+                if self._expected_status is not None and response.status != self._expected_status:
+                    raise RemoteError(response.status)
                 raw = response.read(1_500_001)
                 if len(raw) > 1_500_000:
                     raise ValueError("remote response too large")

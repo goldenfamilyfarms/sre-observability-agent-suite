@@ -5,6 +5,7 @@ import re
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
+from urllib.parse import urlsplit
 
 from ..api_wire import envelope, fields, text
 from ..contracts import Scope, aware
@@ -127,6 +128,7 @@ class QueryProfile:
     scope_labels: tuple[tuple[str, str], ...]
     allow_full_traces: bool = False
     binding_labels: tuple[tuple[str, str], ...] = ()
+    ca_env: str | None = None
 
     def __post_init__(self) -> None:
         identifier(self.id)
@@ -136,7 +138,11 @@ class QueryProfile:
             raise ValueError("full traces require explicit Tempo profile authorization")
         if not isinstance(self.backend, Backend):
             raise ValueError("invalid backend")
-        https_url(self.base_url)
+        if self.ca_env not in {None, "SRE_TELEMETRY_CA_FILE"}:
+            raise ValueError("invalid local telemetry CA variable")
+        https_url(self.base_url, allow_loopback=self.ca_env is not None)
+        if self.ca_env and urlsplit(self.base_url).hostname not in {"localhost", "127.0.0.1"}:
+            raise ValueError("custom telemetry CAs are loopback-only")
         for variable in (self.authorization_env, self.tenant_env):
             if variable is not None and not re.fullmatch(
                 r"SRE_TELEMETRY_[A-Z0-9_]{1,64}", variable
@@ -229,6 +235,8 @@ class QueryPolicy:
                 if isinstance(item, dict) and ("allow_full_traces" in item)
                 else set()
             )
+            if isinstance(item, dict) and "ca_env" in item:
+                optional.add("ca_env")
             if isinstance(item, dict) and "binding_labels" in item:
                 optional.add("binding_labels")
             row = fields(
@@ -267,6 +275,7 @@ class QueryPolicy:
                     )
                     if row.get("binding_labels")
                     else (),
+                    None if row.get("ca_env") is None else text(row["ca_env"], 80),
                 )
             )
         return cls(scope_from_dict(raw["scope"]), tuple(profiles))
@@ -350,6 +359,8 @@ def request_document(request: QueryRequest) -> dict[str, object]:
 
 def profile_document(profile: QueryProfile) -> dict[str, object]:
     value = asdict(profile)
+    if profile.ca_env is None:
+        value.pop("ca_env")
     if not profile.binding_labels:
         value.pop("binding_labels")
     else:

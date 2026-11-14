@@ -204,7 +204,7 @@ class BackendPilotTests(BackendHarness):
             TelemetryAdapter(p, transport(p, self.collector_env)).query(q).status,
             ObservationStatus.EMPTY,
         )
-        with patch("backend_pilot_tests.test_backends.transport") as connect:
+        with patch(f"{__name__}.transport") as connect:
             collector = TelemetryCollector(
                 QueryPolicy(self.config.scope, (p,)),
                 self.f.d.f.engineering.runtime.evidence,
@@ -226,7 +226,7 @@ class BackendPilotTests(BackendHarness):
         finally:
             registry.close()
         with (
-            patch("backend_pilot_tests.test_backends.transport") as connect,
+            patch(f"{__name__}.transport") as connect,
             self.assertRaises(RemoteError),
         ):
             self.collect()

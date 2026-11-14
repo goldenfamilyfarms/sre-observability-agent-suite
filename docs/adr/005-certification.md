@@ -1,6 +1,6 @@
 # ADR-005: accountable final certification
 
-Status: accepted; query adapters pending. Date: 2026-11-07.
+Status: accepted; read adapters in ADR-016, executable check definitions pending. Date: 2026-11-07.
 
 Decision: version the catalog and report. Final service certification accounts for exactly 120 unique slots: 40 tracing, 40 logging and 40 PromQL. Ticket verification may use a subset but cannot claim final certification. Applicable mandatory checks must pass deterministic assertions. Not-applicable results require evidence and justification. ERROR and INCONCLUSIVE cannot pass certification.
 

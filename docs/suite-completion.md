@@ -11,7 +11,7 @@ The target stack is Prometheus, Loki, Tempo, GCP/GKE, Helm and Argo CD, confirme
 | Code review | Separate model invocation against saved candidate; evidence-bound verdict | Separately authenticated reviewer identity and governed change-request loops |
 | QA | Network-disabled container gate plus separate QA model invocation | Multi-service fixtures, synthetic journeys and independent QA identity |
 | Intake / architecture discovery | Validated supplied tickets/plans and scoped knowledge reads | Evidence-producing repository/service discovery and assessment pipeline |
-| Grafana query / telemetry retrieval | Design contract only | Bounded Prometheus, Loki and Tempo adapters; query attribution, partial-result/error handling and private evidence capture |
+| Grafana query / telemetry retrieval | [Bounded Prometheus/Loki reads and partial Tempo search](telemetry-adapters.md), reviewed exact-scope policies, typed results, private evidence capture and generation fences | Full trace fetching, artifact/plan attribution, durable scheduling with total deadlines/cancellation and live backend acceptance |
 | Verification / certification | Typed report aggregation and 40/40/40 design inventory | Executable assertions/query definitions for all 120 checks, trusted applicability assessment, fixture/window/release attribution and orchestrated execution |
 | Synthetic transaction | Design extension point | Allowlisted bounded journeys, scoped propagation and expected-failure fixtures |
 | Telemetry pipeline health | Design extension point | Ingestion/exporter/drop/freshness checks and scheduled evidence collection |

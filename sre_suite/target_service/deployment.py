@@ -99,6 +99,7 @@ def resources(
         + digest(
             {
                 "scope": request.target.raw["scope"],
+                "application": request.target.raw["application"],
                 "artifact": request.binding.artifact_digest,
                 "plan": request.binding.plan_digest,
             }

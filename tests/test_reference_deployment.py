@@ -126,3 +126,63 @@ class ReferenceDeploymentTests(unittest.TestCase):
         ] = "wrong-token"
         with self.assertRaises(ValueError):
             f.runtime.readiness()
+
+    def test_full_reference_oracle_covers_every_scenario_without_demo_exclusions(self):
+        from dataclasses import asdict
+        from datetime import timedelta
+
+        from image_build_tests.reviewed_policy import reviewed
+        from sre_suite.target_service.prepare import prepare
+        from sre_suite.verification.contracts import VerificationPolicy
+        from tests.test_foundation import NOW
+
+        class Config:
+            def url(self, backend):
+                return "https://localhost:9443"
+
+        v, checks, measured = reviewed(self.f.scope, "d" * 40, "sha256:" + "a" * 64, Config())
+        policy = VerificationPolicy.parse(v)
+        ready = copy.deepcopy(self.raw["build"])
+        ready["producer"] = "delivery"
+        result = prepare(
+            dict(
+                plan=dict(
+                    release=dict(
+                        scope=asdict(self.f.scope),
+                        artifact_digest="sha256:" + "a" * 64,
+                        plan_digest="sha256:" + "b" * 64,
+                        required_gates=["certification"],
+                    ),
+                    artifact_kind="container-image-v1",
+                    context_version=0,
+                    window_start=NOW.isoformat(),
+                    window_end=(NOW + timedelta(seconds=15)).isoformat(),
+                    policy_sha256=policy.fingerprint,
+                    catalog_sha256=policy.catalog_sha256,
+                ),
+                verification_policy=v,
+                checks=checks,
+                runner="runner",
+                runner_queue="runner-queue",
+                assessor_queue="assessor-queue",
+                origin=dict(
+                    base_url="https://service.example.invalid",
+                    authorization_env="SRE_JOURNEY_SERVICE_AUTH",
+                    ca_env=None,
+                ),
+                target_service=dict(
+                    build=self.raw["build"],
+                    readiness=ready,
+                    builder="builder",
+                    delivery="delivery",
+                    maximum_age_seconds=300,
+                ),
+            )
+        )
+        self.assertEqual(len(result["fixture_policy"]["checks"]), 120)
+        self.assertEqual(
+            set(c["scenario"] for c in checks.values()), {"health", "unicode", "error"}
+        )
+        self.assertTrue(all(r.applicable for r in policy.rules))
+        self.assertIn("LOGS-010", measured)
+        self.assertNotIn("PROMQL-009", measured)  # HTTP counts cannot prove scrape availability.

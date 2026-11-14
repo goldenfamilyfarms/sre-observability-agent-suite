@@ -41,6 +41,8 @@ class Config:
     issue_type: str
     contract_field: str
     enabled: bool
+    intake_subject: str | None = None
+    assessor_subject: str | None = None
 
     @classmethod
     def load(cls, env: Mapping[str, str]) -> "Config":
@@ -51,6 +53,8 @@ class Config:
             required(env, "SRE_JIRA_ISSUE_TYPE_ID"),
             required(env, "SRE_JIRA_CONTRACT_FIELD"),
             flag(env, "SRE_JIRA_PLANNING_WRITES_ENABLED"),
+            env.get("SRE_INTAKE_SUBJECT"),
+            env.get("SRE_ASSESSMENT_SUBJECT"),
         )
         if (
             not re.fullmatch(r"https://[A-Za-z0-9.-]+", result.url)
@@ -60,6 +64,15 @@ class Config:
             or not re.fullmatch(r"customfield_[1-9][0-9]{0,19}", result.contract_field)
         ):
             raise ValueError("invalid planning configuration")
+        if (result.intake_subject is None) != (result.assessor_subject is None) or (
+            result.intake_subject is not None
+            and (
+                not result.intake_subject
+                or not result.assessor_subject
+                or result.intake_subject == result.assessor_subject
+            )
+        ):
+            raise ValueError("configure distinct discovery identities together")
         return result
 
     def identity(self) -> dict[str, str]:
@@ -69,6 +82,11 @@ class Config:
             "repository": self.repository,
             "issue_type": self.issue_type,
             "contract_field": self.contract_field,
+            **(
+                {"intake_subject": self.intake_subject, "assessor_subject": self.assessor_subject}
+                if self.intake_subject is not None and self.assessor_subject is not None
+                else {}
+            ),
         }
 
 
@@ -223,6 +241,19 @@ class Planner:
         if plan.project != self.config.project or plan.repository != self.config.repository:
             raise ValueError("plan outside configured project/repository")
         context = self.evidence.context(plan.scope, version)
+        if plan.discovery is not None:
+            from ..discovery.provenance import draft, validate_origin
+
+            origin = plan.discovery
+            if (
+                origin.request.intake_subject != self.config.intake_subject
+                or origin.request.assessor_subject != self.config.assessor_subject
+                or origin.request.context_version != context["version"]
+            ):
+                raise ValueError("discovery identity or knowledge snapshot is not authorized")
+            assessment = validate_origin(origin, self.evidence, self.clock())
+            if Plan.parse(draft(origin, assessment)).fingerprint != plan.fingerprint:
+                raise ValueError("draft differs from the assessed dependency plan")
         for node in plan.nodes:
             for evidence in node.template.evidence:
                 if not evidence.valid_for(plan.scope, self.clock()):

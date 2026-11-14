@@ -1,6 +1,6 @@
 # Scoped Jira planning
 
-Version 0.11 adds explicit project discovery, a reviewable plan dry-run, and opt-in issue publication. It implements a bounded first slice of P2-1/P2-2/P2-3. It does not generate a plan with a model, discover arbitrary projects, start engineering workflows, accept completed work, merge or deploy. Live Jira write acceptance remains pending private configuration.
+Version 0.24 adds optional [authenticated discovery provenance and draft generation](intake-assessment.md); this guide also supports manually authored plans. Version 0.11 adds explicit project discovery, a reviewable plan dry-run, and opt-in issue publication. It implements a bounded first slice of P2-1/P2-2/P2-3. It does not generate a plan with a model, discover arbitrary projects, start engineering workflows, accept completed work, merge or deploy. Live Jira write acceptance remains pending private configuration.
 
 ## Private configuration and project checks
 
@@ -30,7 +30,7 @@ Start from [examples/jira-plan.json](../examples/jira-plan.json). Its evidence, 
 
 The version 2 envelope contains `id`, `project`, `repository`, the full `scope`, and 1–20 `nodes`. Each node has an immutable `id`, a bounded `summary`, `depends_on` planned IDs, and `requirements`. Requirements are the existing execution ticket fields except `key`, `dependencies`, `scope` and `repository`; those identities are supplied by the plan and eventual Jira mapping. Requirements include baseline evidence, acceptance criteria, QA, telemetry, delivery and rollback. Each node's evidence must match the complete scope and be currently readable with a valid digest. Production and unscoped environments are rejected.
 
-Duplicate IDs, self-dependencies, cycles, unresolved dependencies, identity overrides and missing criteria fail before publication. Dependencies are restricted to nodes in this plan. This increment supports one repository/revision/preview generation per plan; cross-repository plans and external prerequisites require a later design. A valid plan is a reviewed input, not an automatically inferred backlog.
+Duplicate IDs, self-dependencies, cycles, unresolved dependencies, identity overrides and missing criteria fail before publication. Dependencies are restricted to nodes in this plan. This increment supports one repository/revision/preview generation per plan; cross-repository plans and external prerequisites require a later design. A valid plan is a reviewed input. Optional discovery provenance requires the exact evidence-derived draft and configured intake/assessment subjects; see the discovery guide.
 
 The existing preview registration and evidence upload must happen first. Registration grants are still separate from planning/worker reads. The planner does not register previews, extend grants, upload baseline evidence or invent producers. For a local stack, supply the exact existing worker read token and CA privately; do not give the planner the controller token or database password. The local launcher does not automatically export planning credentials.
 
@@ -78,7 +78,7 @@ Search is permission-filtered and eventually consistent. An empty result is not 
 
 A changed plan cannot reuse its stored plan ID. A changed scope, expired evidence, context version change during publication/retry, terminal status, edited marker, moved issue or changed contract blocks further work. Inspect already-created issues and explicitly review a new plan when appropriate. Fixed-value contract PUT retries converge on the same content after a lost response, but Jira automation can still run more than once if a response is uncertain before the field becomes readable. Concurrent human edits have no atomic compare-and-swap API here; use a dedicated synthetic project and reconcile conflicts rather than treating checks as a transaction.
 
-The journal records delivery intent/results only. It is not a replacement for Temporal workflow history, a shared planning database or a distributed authorization service. Scheduled backlog generation, approval identity, a Temporal planning workflow, governed context reconciliation and live external acceptance remain future work.
+The journal records delivery intent/results only. It is not a replacement for Temporal workflow history, a shared planning database or a distributed authorization service. An explicit Temporal discovery-to-draft workflow is available in the discovery guide. Scheduled backlog publication, authenticated approval identity, governed context reconciliation and live external acceptance remain future work.
 
 ## Verification and API references
 

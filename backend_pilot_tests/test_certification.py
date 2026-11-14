@@ -4,7 +4,7 @@ import asyncio
 import copy
 import json
 from contextlib import AsyncExitStack
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock
 
@@ -20,6 +20,7 @@ from sre_suite.execution.journal import Journal
 from sre_suite.execution.runtime import ExecutionRuntime, execution_key
 from sre_suite.execution.temporal_activities import Activities
 from sre_suite.execution.temporal_workflow import TicketExecution
+from sre_suite.execution.wire import canonical, digest
 from sre_suite.local_pilot.config import write_json
 from sre_suite.local_telemetry.certification import prepare
 from sre_suite.previews import PreviewRegistry
@@ -97,7 +98,7 @@ class FullCertificationTests(BackendHarness):
         self.verification_receipt = self.verifier.verify(raw)
         return self.verification_receipt
 
-    async def test_full_engineering_workflow_evaluates_120_real_checks_and_blocks_gaps(self):
+    async def test_full_engineering_workflow_evaluates_120_real_checks_with_instrumentation(self):
         a = self.activities
         workers = [
             *self.workers(),
@@ -120,7 +121,7 @@ class FullCertificationTests(BackendHarness):
                 execution_timeout=timedelta(minutes=4),
             )
             result = await handle.result()
-        self.assertEqual(result["outcome"], "blocked", result)
+        self.assertEqual(result["outcome"], "ready_for_review", result)
         self.assertIsNotNone(self.verification_receipt, result)
         self.assert_stopped()
         ref = evidence_from_wire(self.verification_receipt["evidence"])
@@ -151,8 +152,6 @@ class FullCertificationTests(BackendHarness):
                 expected = "NOT_APPLICABLE"
             elif "/unavailable_measurement" in rule.selector:
                 expected = "INCONCLUSIVE"
-            elif rule.id == "LOGS-021":
-                expected = "FAIL"
             else:
                 expected = "PASS"
             self.assertEqual(checks[rule.id], expected, rule.id)
@@ -160,12 +159,12 @@ class FullCertificationTests(BackendHarness):
 
         print("Real backend certification outcomes:", dict(Counter(checks.values())))
         self.assertEqual(sum(v == "NOT_APPLICABLE" for v in checks.values()), 44)
-        self.assertEqual(checks["LOGS-021"], "FAIL")  # No exception stack instrumentation.
-        self.assertEqual(checks["PROMQL-009"], "INCONCLUSIVE")  # No bound scrape-health source.
-        self.assertNotEqual(report["verdict"], "PASSED")
+        self.assertEqual(checks["LOGS-021"], "PASS")
+        self.assertEqual(checks["PROMQL-009"], "PASS")
+        self.assertEqual(report["verdict"], "PASSED")
         self.assertFalse(report["merged"] or report["deployed"])
-        self.assertFalse(result["certification"]["ready"])
-        self.assertEqual(len(self.verification_input["observations"]), 4)
+        self.assertTrue(result["certification"]["ready"])
+        self.assertEqual(len(self.verification_input["observations"]), 6)
         await Replayer(workflows=[TicketExecution]).replay_workflow(await handle.fetch_history())
         # Exact source-candidate and plan substitutions cannot produce a certificate.
         engine = CertificationEngine(
@@ -185,6 +184,43 @@ class FullCertificationTests(BackendHarness):
         missing["observations"] = missing["observations"][:-1]
         missing_receipt = await asyncio.to_thread(engine.run, missing, publish=True)
         self.assertNotEqual(missing_receipt["verdict"], "PASSED")
+        # Fault injection into separately uploaded, collector-authenticated copies of real
+        # captures: one missing health measurement or incorrect SLI must block certification.
+        for key, mutation, expected in (
+            ("LOGS-036", "missing", "INCONCLUSIVE"),
+            ("PROMQL-038", "wrong", "FAIL"),
+            ("PROMQL-010", "stale", "FAIL"),
+        ):
+            changed = copy.deepcopy(self.verification_input)
+            observation = next(
+                o for o in changed["observations"] if o["source"] == "instrumentation"
+            )
+            original = evidence_from_wire(observation["evidence"])
+            capture = json.loads(self.runtime.evidence.read(original))
+            metrics = capture["result"]["metrics"]
+            selected = [m for m in metrics if dict(m["labels"]).get("check") == key]
+            self.assertTrue(selected, key)
+            if mutation == "missing":
+                capture["result"]["metrics"] = [m for m in metrics if m not in selected]
+            else:
+                for m in selected:
+                    for sample in m["samples"]:
+                        sample["value"] = 0.5 if mutation == "wrong" else sample["value"] - 10
+            content = canonical(capture).encode()
+            reference = self.runtime.evidence.upload(
+                "fault-" + digest(capture),
+                original.scope,
+                content,
+                original.observed_at,
+                original.expires_at,
+            )
+            observation["evidence"] = json.loads(canonical(asdict(reference)))
+            receipt = await asyncio.to_thread(engine.run, changed, publish=True)
+            bad = json.loads(self.f.d.f.v.api.read(evidence_from_wire(receipt["evidence"])))
+            self.assertNotEqual(bad["verdict"], "PASSED")
+            self.assertEqual(
+                next(r["outcome"] for r in bad["results"] if r["check_id"] == key), expected
+            )
         recovered = CertificationEngine(
             self.f.d.policy.verification, self.f.d.f.v.api, Journal(self.verifier.journal)
         )

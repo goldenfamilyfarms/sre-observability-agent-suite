@@ -90,6 +90,41 @@ class CertificationBundleTests(LocalFixture):
         with self.assertRaises(ValueError):
             self.build()
 
+    def test_opt_in_demo_instrumentation_builds_complete_reviewable_policy(self):
+        verification = self.raw["fixture_policy"]["verification_policy"]
+        verification["sources"] = verification["sources"][:3]
+        metric = next(
+            s["profile"] for s in verification["sources"] if s["profile"]["backend"] == "prometheus"
+        )
+        metric["scope_labels"] = {
+            "service": "service_name",
+            "environment": "deployment_environment",
+            "revision": "service_version",
+            "environment_id": "preview_id",
+            "generation": "preview_generation",
+        }
+        write_json(self.input, self.raw)
+        with patch("sre_suite.local_telemetry.lifecycle.command") as docker:
+            result = self.build(demo_instrumentation=True)
+        docker.assert_not_called()
+        self.assertFalse(result["execution_started"])
+        output = json.loads((self.output / "managed-demo.json").read_text())
+        policy = ManagedPolicy(output)
+        self.assertEqual(result["checks"], 120)
+        self.assertEqual(result["sources"], 6)
+        self.assertEqual(sum(r.applicable for r in policy.fixture.verification.rules), 76)
+        self.assertEqual(output["recipe"], self.raw["recipe"])
+        self.assertEqual(
+            output["fixture_policy"]["verification_policy"]["scope"], verification["scope"]
+        )
+        self.assertNotEqual(policy.dispatch, ManagedPolicy(self.raw).dispatch)
+        self.assertTrue(
+            all(
+                "/unavailable_measurement" not in r.selector
+                for r in policy.fixture.verification.rules
+            )
+        )
+
     def test_preview_generation_target_and_source_mapping_substitution_rejected(self):
         for mutate in (
             lambda r: r["fixture_policy"]["verification_policy"]["scope"].update(generation=2),

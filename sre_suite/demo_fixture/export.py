@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 from ..api_wire import fields, text
 from ..execution.http import JsonHttp
 from ..execution.journal import Journal
+from ..telemetry.contracts import epoch_ns
 from .controller import Controller
 
 
@@ -83,11 +84,29 @@ def flush(
 
             controller.guard()
             path = "/v1/traces" if signal == "traces" else "/loki/api/v1/push"
-            result = clients[signal].call("POST", path, decode(payload.encode()))
-            acknowledge(signal, result)
-            guard()
-            controller.guard()
             with controller.connect() as conn:
+                conn.execute(
+                    "INSERT INTO delivery(key,signal,attempts) VALUES (?,?,1) "
+                    "ON CONFLICT(key,signal) DO UPDATE SET attempts=attempts+1",
+                    (key, signal),
+                )
+            try:
+                result = clients[signal].call("POST", path, decode(payload.encode()))
+                acknowledge(signal, result)
+            except Exception:
+                with controller.connect() as conn:
+                    conn.execute(
+                        "UPDATE delivery SET failures=failures+1 WHERE key=? AND signal=?",
+                        (key, signal),
+                    )
+                raise
+            guard()
+            acknowledged = controller.guard()
+            with controller.connect() as conn:
+                conn.execute(
+                    "UPDATE delivery SET acknowledged_ns=? WHERE key=? AND signal=?",
+                    (epoch_ns(acknowledged), key, signal),
+                )
                 conn.execute(
                     "UPDATE outbox SET delivered=1 WHERE key=? AND signal=? AND payload=?",
                     (key, signal, payload),

@@ -180,7 +180,7 @@ def validate_sources(policy: VerificationPolicy) -> None:
         previous = mappings.setdefault(source.profile.backend, labels)
         if labels != previous:
             raise ValueError("demo sources must share exact label mappings within each backend")
-        if set(labels.values()) & {"case", "le", "__name__"}:
+        if set(labels.values()) & {"case", "le", "__name__", "signal", "unit", "check", "series"}:
             raise ValueError("scope labels collide with demo metric dimensions")
         for field, label in labels.items():
             if label in {"service.name", "service.version"} and (field, label) not in {

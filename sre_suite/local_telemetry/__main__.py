@@ -26,6 +26,7 @@ def main() -> int:
     certify.add_argument("--directory", type=Path, required=True)
     certify.add_argument("--managed-policy", type=Path, required=True)
     certify.add_argument("--output", type=Path, required=True)
+    certify.add_argument("--demo-instrumentation", action="store_true")
     certify.add_argument("--window-seconds", type=int, default=30)
     certify.add_argument("--collector-queue", default="sre-local-telemetry-v1")
     certify.add_argument("--verifier-queue", default="sre-local-certification-v1")
@@ -71,6 +72,7 @@ def main() -> int:
                         args.managed_policy,
                         args.output,
                         window_seconds=args.window_seconds,
+                        demo_instrumentation=args.demo_instrumentation,
                         collector_queue=args.collector_queue,
                         verifier_queue=args.verifier_queue,
                     )

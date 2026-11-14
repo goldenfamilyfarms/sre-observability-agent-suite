@@ -1,6 +1,6 @@
 # Executable check catalog
 
-Catalog `1.0.0` uses service-private source bindings (`bound-observation:${source}`). Every slot has a versioned predicate implementation. Source/field mappings and thresholds must be reviewed for the named concern; see the [operator guide](certification.md). No generic mapping is asserted to certify a live service.
+Catalog `1.1.0` uses service-private source bindings (`bound-observation:${source}`). Every slot has a versioned predicate implementation. Source/field mappings and thresholds must be reviewed for the named concern; see the [operator guide](certification.md). No generic mapping is asserted to certify a live service.
 
 | ID | Concern | Predicate | Required parameters |
 | --- | --- | --- | --- |
@@ -42,7 +42,7 @@ Catalog `1.0.0` uses service-private source bindings (`bound-observation:${sourc
 | TRACES-036 | Sampling policy behavior | `coverage.v1` | `path` |
 | TRACES-037 | Sensitive attribute exclusion | `excluded.v1` | `forbidden`, `paths` |
 | TRACES-038 | Span timing consistency | `timing.v1` | `maximum_clock_skew_ns` |
-| TRACES-039 | Exporter delivery health | `range.v1` | `maximum`, `minimum`, `path` |
+| TRACES-039 | Exporter delivery health | `metric_range.v1` | `maximum`, `minimum`, `minimum_samples` |
 | TRACES-040 | Synthetic journey completeness | `coverage.v1` | `path` |
 | LOGS-001 | Structured record parsing | `structured.v1` | none |
 | LOGS-002 | Timestamp field validity | `timestamp.v1` | `path` |
@@ -77,9 +77,9 @@ Catalog `1.0.0` uses service-private source bindings (`bound-observation:${sourc
 | LOGS-031 | Multiline event integrity | `structured.v1` | none |
 | LOGS-032 | Unicode record integrity | `unicode.v1` | `path` |
 | LOGS-033 | Duplicate event control | `unique.v1` | `path` |
-| LOGS-034 | Ingestion latency bound | `latency.v1` | `maximum_seconds`, `path` |
+| LOGS-034 | Ingestion latency bound | `metric_range.v1` | `maximum`, `minimum`, `minimum_samples` |
 | LOGS-035 | Ingestion loss detection | `coverage.v1` | `path` |
-| LOGS-036 | Retention policy evidence | `range.v1` | `maximum`, `minimum`, `path` |
+| LOGS-036 | Retention policy evidence | `metric_range.v1` | `maximum`, `minimum`, `minimum_samples` |
 | LOGS-037 | Authorized datasource scope | `equals.v1` | `path`, `value` |
 | LOGS-038 | Low cardinality labels | `cardinality.v1` | `maximum`, `path` |
 | LOGS-039 | Synthetic journey log coverage | `coverage.v1` | `path` |
@@ -124,3 +124,5 @@ Catalog `1.0.0` uses service-private source bindings (`bound-observation:${sourc
 | PROMQL-038 | Availability SLI readiness | `metric_expected.v1` | `minimum_samples`, `tolerance` |
 | PROMQL-039 | Latency SLI readiness | `metric_expected.v1` | `minimum_samples`, `tolerance` |
 | PROMQL-040 | Error budget burn calculation | `metric_expected.v1` | `minimum_samples`, `tolerance` |
+
+TRACES-039, LOGS-034 and LOGS-036 require candidate-bound Prometheus health measurements in catalog 1.1. See [migration and interpretation](demo-instrumentation.md).

@@ -13,7 +13,12 @@ from sre_suite.execution.journal import Journal
 from sre_suite.execution.wire import canonical, digest
 from sre_suite.telemetry.collector import TelemetryCollector
 from sre_suite.telemetry.contracts import Backend, QueryPolicy, epoch_ns
-from sre_suite.verification.contracts import VerificationInput, VerificationPolicy, catalog_digest
+from sre_suite.verification.contracts import (
+    HEALTH_CHECKS,
+    VerificationInput,
+    VerificationPolicy,
+    catalog_digest,
+)
 from sre_suite.verification.runtime import CertificationEngine
 from tests.execution_fixture import Fixture
 from tests.test_api import AUDIENCE, SECOND_TOKEN, credential, request
@@ -29,7 +34,7 @@ START, END = NOW - timedelta(seconds=120), NOW - timedelta(seconds=1)
 
 def case(check):
     op = check.assertion.removesuffix(".v1")
-    category = check.category.value
+    category = "promql" if check.id in HEALTH_CHECKS else check.category.value
     base = "/attributes" if category == "traces" else "/body" if category == "logs" else "/labels"
     path = base + "/value"
     index = int(check.id.split("-")[1])
@@ -112,7 +117,7 @@ def case(check):
     if op == "sample_age":
         p = {"maximum_seconds": 10, "minimum_samples": 2}
         for s in row["samples"]:
-            s["value"] = END.timestamp() - 1
+            s["value"] = s["timestamp_ns"] / 1e9 - 1
     if op == "monotonic":
         p = {"maximum_resets": 0, "minimum_samples": 2}
     for container in ("attributes", "body", "labels"):
@@ -246,7 +251,7 @@ class VerificationFixture:
         self.rows = {category: [] for category in ("traces", "logs", "promql")}
         for check in self.catalog.checks:
             params, rows, expected, context = case(check)
-            category = check.category.value
+            category = "promql" if check.id in HEALTH_CHECKS else check.category.value
             container = (
                 "attributes" if category == "traces" else "body" if category == "logs" else "labels"
             )

@@ -1,6 +1,6 @@
 # Deterministic telemetry certification
 
-Version 0.16 implements a parameterized 120-check engine: 40 trace, 40 log and 40 PromQL checks. Catalog `1.0.0` maps every stable ID to an executable, bounded predicate. The [catalog reference](check-catalog.md) lists every mapping and required parameter. The old `0.1.0-draft` catalog was a design inventory; it could not certify anything.
+Version 0.16 implements a parameterized 120-check engine: 40 trace, 40 log and 40 PromQL checks. Catalog `1.1.0` maps every stable ID to an executable, bounded predicate. The [catalog reference](check-catalog.md) lists every mapping and required parameter. The old `0.1.0-draft` catalog was a design inventory; it could not certify anything.
 
 The engine consumes authenticated, previously collected observations. It does **not** invent service queries, run synthetic traffic, discover applicability, or infer thresholds from telemetry. Operators supply reviewed source profiles, field mappings, thresholds and independently produced fixture evidence privately. The shipped template is deliberately invalid until those decisions are made. A synthetic test passing all 120 checks is not a certification of a live service.
 
@@ -135,3 +135,5 @@ Mapping predicates compare explicit source/target pairs (for example HTTP status
 For automatic child dispatch within an explicitly started engineering run, see [engineering certification](engineering-certification.md). Its private configuration, source compatibility checks and bounded independent fixture handoff are required before certification can gate review readiness.
 
 Version 0.18 supplies [independent fixture-runner and assessor agents](fixture-agents.md). Automatically produced assessments include an `execution` reference (`policy_sha256`, `evidence`) to authenticated runner proof; the engine and gate reader revalidate that proof and include it in certificate freshness. Legacy manually produced assessments remain supported. Service-specific scenario/controller behavior and reviewed expectations are still required.
+
+Version 0.23 changes the three infrastructure health source mappings and sample-freshness semantics. Existing private policies require regeneration; see [demo instrumentation and migration](demo-instrumentation.md).

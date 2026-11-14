@@ -2,7 +2,7 @@
 
 Version 0.18 implements a bounded fixture execution agent and an independent deterministic assessor for the 120-check certification workflow. They use separate API subjects, credentials, queues and journals. An explicitly started engineering run can dispatch them automatically during its frozen observation window. The assessor's expected telemetry values come from reviewed private policy, never from the telemetry being certified or a model-generated answer.
 
-This is a real HTTPS scenario-controller adapter. It POSTs reviewed fixture commands to a single authorized non-production origin, records responses, and independently checks their assertions. Your target must expose the scenario protocol below and implement the service-specific traffic/capability probes. Credentials alone cannot provide that target behavior or choose meaningful expectations. This package does not provision a controller, inject arbitrary code into a target, or provide universal gRPC/database/messaging traffic for unknown services.
+This is a real HTTPS scenario-controller adapter. It POSTs reviewed fixture commands to a single authorized non-production origin, records responses, and independently checks their assertions. The [packaged demo fixture controller](demo-fixture-controller.md) implements this protocol for one explicitly pinned demo source recipe. Other targets must implement their service-specific traffic/capability probes. Credentials alone cannot provide that target behavior or choose meaningful expectations. This package does not provision a controller, inject arbitrary code into a target, or provide universal gRPC/database/messaging traffic for unknown services.
 
 ## Private policy
 

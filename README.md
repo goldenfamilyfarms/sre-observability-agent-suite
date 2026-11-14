@@ -2,7 +2,7 @@
 
 A public, generic foundation for Jira-driven observability engineering using Claude Code workers, an external durable orchestrator, and shared evidence-backed knowledge.
 
-**Status: Phase 1 execution pilot implemented.** Preview identity, PostgreSQL persistence, authenticated evidence/context APIs, Temporal orchestration, restricted Claude Code workers and Jira adapters are included. Version 0.15 connects optional, finite telemetry collection to the engineering workflow and binds observations to the exact source candidate and frozen execution plan. The planning-to-pilot handoff generates an execution specification and runs read-only preflight. Workflow start remains explicit. The runtime includes opt-in automatic draft PRs, bounded Jira status transitions and a read-only preflight command. Live Jira/model acceptance remains pending your private environment configuration. No merge, deployment or cloud executor is included; examples are synthetic. Start with the [one-ticket live pilot checklist](docs/live-pilot-checklist.md), [local pilot startup guide](docs/local-pilot.md), [runtime setup guide](docs/execution-runtime.md) and [.env.example](.env.example).
+**Status: Phase 1 execution pilot implemented.** Preview identity, PostgreSQL persistence, authenticated evidence/context APIs, Temporal orchestration, restricted Claude Code workers and Jira adapters are included. Version 0.16 adds deterministic, evidence-backed 120-check certification with private reviewed mappings, independent fixtures and explicit Temporal verification. Candidate-bound telemetry remains integrated with the engineering workflow. The planning-to-pilot handoff generates an execution specification and runs read-only preflight. Workflow start remains explicit. The runtime includes opt-in automatic draft PRs, bounded Jira status transitions and a read-only preflight command. Live Jira/model acceptance remains pending your private environment configuration. No merge, deployment or cloud executor is included; examples are synthetic. Start with the [one-ticket live pilot checklist](docs/live-pilot-checklist.md), [local pilot startup guide](docs/local-pilot.md), [runtime setup guide](docs/execution-runtime.md) and [.env.example](.env.example).
 
 ## Run locally
 
@@ -13,7 +13,7 @@ python -m unittest discover -v
 python -m sre_suite.demo
 ```
 
-The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.15.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
+The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.16.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
 
 For the same static checks as CI:
 
@@ -54,7 +54,7 @@ python -m ruff format --check .
 - SQLite reference memory with evidence provenance, optimistic versions, conflict detection, graph edges, snapshots, and transactional change events.
 - Ticket transition guards and restartable local checkpoints with idempotency-key conflict detection.
 - Default-deny promotion policy: exact-release non-production authorization and explicit human approval for production.
-- A versioned **120-slot design catalog** (40 traces, 40 logs, 40 PromQL) and report aggregation. Query/assertion implementations are intentionally absent; this draft cannot issue a passing certificate.
+- A versioned [120-check certification engine](docs/certification.md) (40 traces, 40 logs, 40 PromQL) with deterministic predicates, authenticated evidence, immutable reports and explicit durable verification. Live service certification requires reviewed private queries/mappings/thresholds and independent fixture evidence.
 - Unit/adapter tests, a synthetic vertical slice, and CI configuration with no shipping steps.
 
 ## Design and delivery
@@ -73,7 +73,7 @@ python -m ruff format --check .
 - [Phased plan and acceptance gates](docs/implementation-plan.md)
 - [Dynamic GCP preview environments: GitHub, Helm and Argo CD](docs/dynamic-environments.md)
 - [Agent contracts](docs/agent-contracts.md)
-- [Certification design](docs/certification.md)
+- [Deterministic certification](docs/certification.md)
 - [Validation and limitations](docs/validation.md)
 - [Public repository and security boundaries](SECURITY.md)
 

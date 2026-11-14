@@ -10,7 +10,7 @@ Review the full-trace permission separately: a distributed trace may contain oth
 
 The bounded OTLP payload is preserved in private evidence, including resources, instrumentation scopes, attributes, events, links, status and extension fields. Typed span summaries accompany it. Current `resourceSpans` / `scopeSpans` and legacy `batches` / `instrumentationLibrarySpans` are supported, with canonical hex and protobuf base64 identifiers normalized for validation. Ambiguous representations, wrong IDs, duplicate spans/attributes, cycles, invalid values and exceeded budgets fail closed.
 
-Backend `PARTIAL`, pruning, dropped-data counters, missing parents and abnormal root counts produce a partial observation. Unknown completeness/pruning enums are rejected. An omitted completeness enum is protobuf's `COMPLETE` zero value. `observed` still does not prove all spans were emitted, ingested or retained. Tempo's time bounds restrict searched blocks; sampling, retention or blocks outside the window can omit data even when the server reports completion. The 120-check catalog remains a design inventory; no collection issues a certificate.
+Backend `PARTIAL`, pruning, dropped-data counters, missing parents and abnormal root counts produce a partial observation. Unknown completeness/pruning enums are rejected. An omitted completeness enum is protobuf's `COMPLETE` zero value. `observed` still does not prove all spans were emitted, ingested or retained. Tempo's time bounds restrict searched blocks; sampling, retention or blocks outside the window can omit data even when the server reports completion. The [120-check certification engine](certification.md) is a separate explicit stage; no collection issues a certificate.
 
 ## Private schedule preparation
 

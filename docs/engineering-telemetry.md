@@ -50,7 +50,7 @@ The plan includes the two digests, artifact kind, implementation reference, fixe
 
 Before recording readiness or transitioning Jira to review, the engineering activity reads the actual evidence bytes through the authenticated API, verifies content digest and producer, exact scope/generation, candidate/manifest binding, query profile, fixed window, context version, timestamps and expiry, then rechecks returned candidate attribution. Every configured source must have one complete nonempty `observed` result without issues. Missing/tampered references fail closed. Partial, empty or failed collections yield a blocked report. Scope/context and candidate PR head are rechecked around publication. Drafts created before a later failure remain open for review; the workflow never merges or deploys them.
 
-`ready_for_review` means the engineering gates and configured observation requirements passed. A metric value such as `up=0` is still an observation, not a health assertion. `certification_verdict` remains null. The 120 deterministic certification checks, expected-failure fixtures and deployment provenance remain separate implementations.
+`ready_for_review` means the engineering gates and configured observation requirements passed. A metric value such as `up=0` is still an observation, not a health assertion. `certification_verdict` remains null. Version 0.16 adds the [separate explicit 120-check certification engine](certification.md). Operators supply independently executed fixtures; deployment provenance remains separate.
 
 ## Recovery and cancellation
 

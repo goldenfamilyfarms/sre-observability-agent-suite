@@ -61,3 +61,5 @@ Canceling a parent cancels its children, including durable waits; active collect
 Old recorded prepare results have no telemetry marker and replay the original engineering path. Do not change a worker's policy halfway through an execution: manifest checks reject it. Complete/drain existing runs before enabling a changed configuration, or restart with a fresh reviewed run ID.
 
 Tests cover protocol attribution for all three backends, actual authenticated evidence, changed candidates/plans, missing/forged evidence, expiry/generation fences, draft-publication recovery, real Temporal child workflows, lost acknowledgements, replay, restart and cancellation. All fixtures and credentials are synthetic.
+
+Version 0.17 adds an optional required [certification gate](engineering-certification.md) after these observations. It verifies all 120 slots through the separate verifier workflow and rechecks the current certificate before final review readiness. Without that configuration, telemetry readiness alone remains an observation result.

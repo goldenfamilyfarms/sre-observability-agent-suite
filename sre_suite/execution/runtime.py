@@ -12,6 +12,7 @@ from typing import Any
 from ..api_wire import envelope, evidence_from_wire, text
 from ..contracts import Environment
 from ..serialization import scope_from_dict
+from .certification import EngineeringCertification
 from .claude import ClaudeCodeWorker
 from .config import Settings
 from .evidence_client import EvidenceClient
@@ -63,6 +64,11 @@ class ExecutionRuntime:
             if settings.telemetry_config
             else None
         )
+        self.certification = (
+            EngineeringCertification(Path(settings.certification_config), self.telemetry)
+            if settings.certification_config
+            else None
+        )
         self.policy = digest(
             {
                 **(
@@ -75,6 +81,7 @@ class ExecutionRuntime:
                     else {}
                 ),
                 **({"telemetry": self.telemetry.fingerprint} if self.telemetry else {}),
+                **({"certification": self.certification.fingerprint} if self.certification else {}),
                 "repository": settings.repository,
                 "jira_url": settings.jira_url,
                 "evidence_url": settings.evidence_url,
@@ -123,6 +130,8 @@ class ExecutionRuntime:
         reference: dict[str, Any] = {"key": key, "manifest": digest(manifest)}
         if self.telemetry:
             reference["telemetry_required"] = True
+        if self.certification:
+            reference["certification_required"] = True
         self._guard(reference, heartbeat)
         if self.settings.jira_transitions:
 
@@ -262,6 +271,20 @@ class ExecutionRuntime:
             raise ValueError("engineering telemetry is not authorized")
         return self.telemetry.prepare(self, arguments, heartbeat)
 
+    def prepare_certification(
+        self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
+    ) -> dict[str, Any]:
+        if self.certification is None:
+            raise ValueError("engineering certification is not authorized")
+        return self.certification.plan(self, arguments, heartbeat)
+
+    def bind_certification(
+        self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
+    ) -> dict[str, Any]:
+        if self.certification is None:
+            raise ValueError("engineering certification is not authorized")
+        return self.certification.bind(self, arguments, heartbeat)
+
     def finish(
         self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
@@ -278,6 +301,13 @@ class ExecutionRuntime:
         )
         if telemetry is not None:
             ready = telemetry["ready"]
+        certification = (
+            self.certification.verify(self, arguments, heartbeat)
+            if ready and self.certification
+            else None
+        )
+        if certification is not None:
+            ready = certification["ready"]
         ticket = ticket_from_wire(manifest["ticket"])
 
         def guard() -> None:
@@ -286,6 +316,9 @@ class ExecutionRuntime:
             if telemetry is not None and self.telemetry is not None:
                 if self.telemetry.verify(self, arguments, heartbeat) != telemetry:
                     raise ValueError("telemetry attestation changed")
+            if certification is not None and self.certification is not None:
+                if self.certification.verify(self, arguments, heartbeat) != certification:
+                    raise ValueError("certification gate changed")
             if pull_request is not None:
                 self.github.verify(pull_request, heartbeat)
 
@@ -318,6 +351,7 @@ class ExecutionRuntime:
             "manifest": reference["manifest"],
             "stages": results,
             **({"telemetry": telemetry} if telemetry is not None else {}),
+            **({"certification": certification} if certification is not None else {}),
             "patch_sha256": hashlib.sha256(loaded[0].get("patch", "").encode()).hexdigest()
             if loaded
             else None,
@@ -340,4 +374,5 @@ class ExecutionRuntime:
             "manifest": reference["manifest"],
             "patch_artifact": results[0]["artifact"] if results else None,
             **({"telemetry": telemetry} if telemetry is not None else {}),
+            **({"certification": certification} if certification is not None else {}),
         }

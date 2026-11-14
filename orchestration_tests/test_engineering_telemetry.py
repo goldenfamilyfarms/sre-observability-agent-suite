@@ -49,8 +49,10 @@ class EngineeringTelemetryEngineTests(unittest.IsolatedAsyncioTestCase):
         self.lose_ack = False
         self.partial = False
         self.fail_collection = False
+        cache = Path(tempfile.gettempdir()) / "sre-temporal-test-bin"
+        cache.mkdir(exist_ok=True)
         self.environment = await WorkflowEnvironment.start_local(
-            download_dest_dir=str(Path(tempfile.gettempdir()) / "sre-temporal-test-bin"),
+            download_dest_dir=str(cache),
             dev_server_log_level="error",
             ui=False,
         )

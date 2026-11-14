@@ -73,8 +73,7 @@ class EngineeringCertification:
             if (
                 source.profile != expected[source.profile.id]
                 or source.trace_id != selected[source.profile.id]
-                or source.step_seconds != 15
-                or source.limit != 100
+                or (source.step_seconds, source.limit) != telemetry.query_options[source.profile.id]
             ):
                 raise ValueError("certification source differs from engineering request")
         self.fingerprint = digest(

@@ -26,3 +26,4 @@
 | [022](022-demo-fixture-controller.md) | Pinned demo target, durable fixture effects and reviewed capability mapping | Accepted for the local non-production pilot |
 | [023](023-managed-demo-lifecycle.md) | Managed target startup and durable export before engineering collection | Accepted for the local non-production pilot |
 | [024](024-local-telemetry-backends.md) | Local telemetry backends, authenticated scraping and real pilot acceptance | Accepted for the local non-production pilot |
+| [025](025-local-full-certification.md) | Local-stack wiring and full certification workflow acceptance | Accepted for the source-candidate engineering pilot |

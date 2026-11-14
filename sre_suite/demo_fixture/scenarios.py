@@ -165,14 +165,21 @@ def reviewed(policy: FixturePolicy) -> None:
 
 
 def validate_sources(policy: VerificationPolicy) -> None:
-    if len(policy.sources) != 3 or {s.profile.backend for s in policy.sources} != {
+    if not 3 <= len(policy.sources) <= 20 or {s.profile.backend for s in policy.sources} != {
         "prometheus",
         "loki",
         "tempo",
     }:
-        raise ValueError("demo requires one source for each backend")
+        raise ValueError("demo requires 3..20 sources covering all three backends")
+    trace_sources = [s for s in policy.sources if s.profile.backend == "tempo"]
+    if len(trace_sources) != 1:
+        raise ValueError("demo requires exactly one full journey trace")
+    mappings: dict[str, dict[str, str]] = {}
     for source in policy.sources:
         labels = dict(source.profile.scope_labels) | dict(source.profile.binding_labels)
+        previous = mappings.setdefault(source.profile.backend, labels)
+        if labels != previous:
+            raise ValueError("demo sources must share exact label mappings within each backend")
         if set(labels.values()) & {"case", "le", "__name__"}:
             raise ValueError("scope labels collide with demo metric dimensions")
         for field, label in labels.items():

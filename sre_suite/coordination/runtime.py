@@ -223,6 +223,21 @@ class SuiteRuntime:
                     frozenset(value["producers"]), frozenset(value["predicates"]), value["maximum"]
                 ),
             ).run(self.plan.binding.scope)
+        elif kind in {"image-build", "image-publish"}:
+            from ..image_build.config import load_runtime as load_build
+
+            fields(value, {"config", "config_sha256", "request_sha256"})
+            path = Path(text(value["config"]))
+            config = wire(private_document(path))
+            if (
+                digest(config) != value["config_sha256"]
+                or digest(private_document(Path(config["request"]))) != value["request_sha256"]
+            ):
+                raise ValueError("image worker configuration or request changed")
+            builder = load_build(path)
+            if builder.request.binding.scope != self.plan.binding.scope:
+                raise ValueError("image build scope differs")
+            result = builder.build() if kind == "image-build" else builder.publish()
         elif kind == "shipping":
             from ..delivery.shipping_runtime import load_runtime
 

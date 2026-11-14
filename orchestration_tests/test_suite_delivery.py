@@ -36,6 +36,7 @@ class Steps:
         self.attempts = []
         self.executing = asyncio.Event()
         self.release = asyncio.Event()
+        self.results = {}
 
     @activity.defn(name="delivery_step")
     async def delivery(self, value: dict) -> dict:
@@ -70,7 +71,7 @@ class Steps:
         while not self.ready and not self.release.is_set():
             activity.heartbeat()
             await asyncio.sleep(0.02)
-        return {"passed": True}
+        return self.results.get(value["node"], {"passed": True})
 
     @activity.defn(name="suite_record")
     async def record(self, value: dict) -> dict:
@@ -145,6 +146,35 @@ class SuiteTemporalTests(unittest.IsolatedAsyncioTestCase):
         result = await self.run_case(SuiteExecution, rebind(request))
         self.assertEqual(result["outcome"], "blocked")
         self.assertFalse(self.steps.executing.is_set())
+
+    async def test_image_build_and_publish_stop_for_new_digest_approval_and_replay(self):
+        request = plan("image-build")
+        first = request["nodes"][0]
+        first["task_queue"] = self.queue
+        request["nodes"].extend(
+            [
+                {
+                    **copy.deepcopy(first),
+                    "id": "publish",
+                    "kind": "image-publish",
+                    "depends_on": ["first"],
+                },
+                {
+                    **copy.deepcopy(first),
+                    "id": "after",
+                    "kind": "analysis",
+                    "depends_on": ["publish"],
+                },
+            ]
+        )
+        self.steps.results = {
+            "first": {"outcome": "built", "image_digest": "sha256:" + "a" * 64},
+            "publish": {"outcome": "attested", "build": {"synthetic": True}},
+        }
+        result = await self.run_case(SuiteExecution, rebind(request))
+        self.assertEqual(result["outcome"], "awaiting_review")
+        self.assertEqual(result["remaining"], 1)
+        self.assertEqual(self.steps.attempts, [("first", 0), ("publish", 0)])
 
     async def test_cancellation_propagates_and_does_not_record_success(self):
         self.steps.ready = False

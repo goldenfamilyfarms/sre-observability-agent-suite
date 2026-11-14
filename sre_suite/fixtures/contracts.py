@@ -69,6 +69,7 @@ class FixturePolicy:
     checks: dict[str, Any]
     fingerprint: str
     journeys: dict[str, Any] | None = None
+    target_service: dict[str, Any] | None = None
 
     @property
     def dispatch(self) -> dict[str, Any]:
@@ -91,7 +92,11 @@ class FixturePolicy:
                 "scenarios",
                 "checks",
             }
-            | ({"journeys"} if isinstance(value, dict) and "journeys" in value else set()),
+            | (
+                {k for k in ("journeys", "target_service") if k in value}
+                if isinstance(value, dict)
+                else set()
+            ),
         )
         policy = VerificationPolicy.parse(row["verification_policy"])
         runner = text(row["runner"], 128)
@@ -188,6 +193,15 @@ class FixturePolicy:
             from .journeys import validate as validate_journeys
 
             journeys = validate_journeys(row["journeys"], {s.path for s in scenarios})
+        target_service = None
+        if "target_service" in row:
+            from .target_service import validate as validate_target
+
+            if journeys is None:
+                raise ValueError("target service proof requires reviewed journeys")
+            target_service = validate_target(
+                row["target_service"], runner, policy.assessor, policy.collector, policy.verifier
+            )
         return cls(
             policy,
             runner,
@@ -200,6 +214,7 @@ class FixturePolicy:
             dict(checks),
             digest(row),
             journeys,
+            target_service,
         )
 
 

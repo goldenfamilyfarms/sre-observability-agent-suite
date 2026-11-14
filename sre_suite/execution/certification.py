@@ -22,14 +22,24 @@ if TYPE_CHECKING:
 
 class EngineeringCertification:
     def __init__(self, path: Path, telemetry: "EngineeringTelemetry | None") -> None:
+        from ..fixtures.contracts import dispatch
         from ..verification.config import private_document
 
+        raw = private_document(path, 1_048_576)
         row = envelope(
-            private_document(path, 1_048_576), {"policy", "task_queue", "fixture_wait_seconds"}
+            raw,
+            {"policy", "task_queue", "fixture_wait_seconds"}
+            | ({"fixture"} if isinstance(raw, dict) and "fixture" in raw else set()),
         )
+        self.fixture = dispatch(row["fixture"]) if "fixture" in row else None
         self.policy = VerificationPolicy.parse(row["policy"])
         self.queue = text(row["task_queue"], 80)
         self.wait = row["fixture_wait_seconds"]
+        if self.fixture and self.queue in {
+            self.fixture["runner_queue"],
+            self.fixture["task_queue"],
+        }:
+            raise ValueError("fixture roles and verifier require separate queues")
         if not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", self.queue):
             raise ValueError("invalid certification queue")
         if type(self.wait) is not int or not 1 <= self.wait <= 600:
@@ -51,7 +61,12 @@ class EngineeringCertification:
             ):
                 raise ValueError("certification source differs from engineering request")
         self.fingerprint = digest(
-            {"policy": self.policy.fingerprint, "queue": self.queue, "wait": self.wait}
+            {
+                "policy": self.policy.fingerprint,
+                "queue": self.queue,
+                "wait": self.wait,
+                **({"fixture": self.fixture} if self.fixture else {}),
+            }
         )
 
     def plan(
@@ -83,6 +98,7 @@ class EngineeringCertification:
                     "task_queue": self.queue,
                     "fixture_wait_seconds": self.wait,
                     "telemetry_plan": telemetry["digest"],
+                    **({"fixture": self.fixture} if self.fixture else {}),
                 }
             )
         )
@@ -144,6 +160,10 @@ class EngineeringCertification:
             or any(digest(doc.get(k)) != digest(v) for k, v in expected.items())
         ):
             raise ValueError("fixture does not attest the exact engineering plan")
+        if self.fixture is not None:
+            proof = fields(doc.get("execution"), {"policy_sha256", "evidence"})
+            if proof["policy_sha256"] != self.fixture["policy_sha256"]:
+                raise ValueError("assessment differs from the authorized fixture policy")
         observations = []
         for entry, report in zip(
             arguments["telemetry"]["plan"]["schedules"],

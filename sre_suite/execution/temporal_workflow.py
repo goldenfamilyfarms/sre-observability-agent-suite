@@ -9,6 +9,9 @@ from temporalio import workflow
 from temporalio.common import RetryPolicy, WorkflowIDReusePolicy
 from temporalio.exceptions import ActivityError, ChildWorkflowError, is_cancelled_exception
 
+with workflow.unsafe.imports_passed_through():
+    from ..fixtures.contracts import FixtureRequest
+
 
 @workflow.defn
 class TicketExecution:
@@ -64,6 +67,7 @@ class TicketExecution:
                 if result["verdict"] != "passed":
                     break
             arguments: dict[str, Any] = {"reference": reference, "results": results}
+            fixture_child = None
             # Recorded prepare output keeps pre-integration histories on their original path.
             if (
                 reference.get("telemetry_required")
@@ -81,6 +85,22 @@ class TicketExecution:
                         "prepare_engineering_certification", arguments, **options
                     )
                     arguments["certification_plan"] = self.certificate_plan
+                    if self.certificate_plan and self.certificate_plan.get("fixture"):
+                        fixture_request = {
+                            "plan": self.certificate_plan,
+                            "dispatch": self.certificate_plan["fixture"],
+                        }
+                        fixture_identity = FixtureRequest.parse(fixture_request).identity
+                        fixture_child = await workflow.start_child_workflow(
+                            "FixtureAssessment",
+                            fixture_request,
+                            id=fixture_identity,
+                            task_queue=self.certificate_plan["fixture"]["task_queue"],
+                            execution_timeout=timedelta(minutes=70),
+                            id_reuse_policy=WorkflowIDReusePolicy.REJECT_DUPLICATE,
+                            parent_close_policy=workflow.ParentClosePolicy.REQUEST_CANCEL,
+                            cancellation_type=workflow.ChildWorkflowCancellationType.WAIT_CANCELLATION_COMPLETED,
+                        )
                 self.state = "collecting_telemetry"
                 reports = await asyncio.gather(
                     *(
@@ -109,19 +129,31 @@ class TicketExecution:
                         and r["collections"][0].get("status") == "observed"
                         for r in reports
                     )
+                    automatic_fixture = None
+                    if fixture_child is not None:
+                        self.state = "assessing_fixtures"
+                        assessment = await fixture_child
+                        if assessment.get("outcome") == "assessed":
+                            automatic_fixture = assessment.get("evidence")
+                        else:
+                            observed = False
                     if observed:
                         self.state = "waiting_certification_fixture"
-                        try:
-                            await workflow.wait_condition(
-                                lambda: self.fixture is not None,
-                                timeout=timedelta(
-                                    seconds=self.certificate_plan["fixture_wait_seconds"]
-                                ),
-                            )
-                        except TimeoutError:
-                            pass
-                        if self.fixture is not None:
-                            arguments["certification_fixture"] = self.fixture
+                        if fixture_child is None:
+                            try:
+                                await workflow.wait_condition(
+                                    lambda: self.fixture is not None,
+                                    timeout=timedelta(
+                                        seconds=self.certificate_plan["fixture_wait_seconds"]
+                                    ),
+                                )
+                            except TimeoutError:
+                                pass
+                        fixture_reference = (
+                            automatic_fixture if fixture_child is not None else self.fixture
+                        )
+                        if fixture_reference is not None:
+                            arguments["certification_fixture"] = fixture_reference
                             self.state = "binding_certification"
                             request = await workflow.execute_activity(
                                 "bind_engineering_certification", arguments, **options

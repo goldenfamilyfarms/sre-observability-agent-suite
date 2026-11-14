@@ -71,3 +71,5 @@ Future adapters emit execution/ticket/service IDs, attempt counts, state-transit
 ## Implemented execution pilot
 
 Phase 1 increment 4 adds `sre_suite.execution`: real Temporal workflows, restricted Claude Code CLI workers, Jira Cloud intake and idempotent result-property writeback. Shared evidence/context remains behind the existing scoped API; full environment ID/generation checks apply before every gate. A private shared filesystem journal retains immutable model results for retry reuse. See [runtime boundaries and setup](execution-runtime.md) and [ADR-010](adr/010-temporal-execution-pilot.md). Model/Jira tests use fixtures; no shipping or production execution is enabled.
+
+Increment 5 adds optional draft-PR publication after all four gates and configured nonterminal Jira transitions. Every write revalidates scope and evidence; Jira review additionally checks the current PR head. Cross-service partial writes are retained for human reconciliation. See [ADR-011](adr/011-draft-pr-and-jira-transitions.md).

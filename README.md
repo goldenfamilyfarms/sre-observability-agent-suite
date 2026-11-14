@@ -2,7 +2,11 @@
 
 A public, generic foundation for Jira-driven observability engineering using Claude Code workers, an external durable orchestrator, and shared evidence-backed knowledge.
 
-**Status: Phase 1 execution pilot implemented.** Preview identity, PostgreSQL persistence, authenticated evidence/context APIs, Temporal orchestration, restricted Claude Code workers and Jira adapters are included. Live Jira/model acceptance remains pending your private environment configuration. No merge, deployment, cloud or telemetry-query adapter is included; examples are synthetic. Start with the [runtime setup guide](docs/execution-runtime.md) and [.env.example](.env.example).
+**Status: all twelve proposal roles have bounded v1 implementations; private live acceptance remains pending.** Version 0.25 adds [authenticated approvals and knowledge stewardship, independent engineering roles, Jira epics, durable suite dispatch, GKE/Helm/Argo delivery, guarded shipping, generic service journeys and runtime/regression analysis](docs/agent-suite-operations.md). Artifact, plan, environment ID and generation checks remain mandatory. No organization-specific deployment, production recovery or private service certification is implied by local tests. See the [completion ledger](docs/suite-completion.md) for implementation boundaries and remaining operational acceptance.
+
+Version 0.26 adds [reviewed image builds, registry publication and authenticated attestation, plus a containerized Python target and image-bound fixtures](docs/image-build-and-target-fixtures.md).
+
+The existing local real-backend demo evaluates all 120 catalog slots: 76 applicable checks and 44 capability-backed exclusions. These results do not certify the new Python target or private services. Missing measurements remain non-passing. Workflow start is explicit; production requires a current authenticated human approval of the exact release.
 
 ## Run locally
 
@@ -13,7 +17,7 @@ python -m unittest discover -v
 python -m sre_suite.demo
 ```
 
-The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.5.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
+The demo registers a preview generation, verifies local evidence bytes, runs a fake engineering worker against shared scoped knowledge, and reopens persisted knowledge/checkpoints. It performs no external calls. A successful demo does not prove distributed orchestration or real engineering changes. Package 0.26.0 preserves the 0.2.0 requirement for explicit environment IDs/generations and a deliberate [legacy storage upgrade](docs/phase-1-foundation.md#upgrading-local-010-storage).
 
 For the same static checks as CI:
 
@@ -28,8 +32,36 @@ python -m ruff format --check .
 
 ## Included
 
+- [Intake and assessment agents](docs/intake-assessment.md): exact Git snapshot discovery, independent evidence, gap assessment and a guarded dependency plan.
+
+- [Full local certification](docs/local-certification.md): consistent reviewed worker policies, multiple source queries and real-backend 120-check workflow acceptance.
+
+- [Local telemetry stack](docs/local-telemetry.md): explicitly started Prometheus, Loki and Tempo, private TLS gateways, scraping and persisted backend acceptance.
+
+- [Managed demo pilot](docs/managed-demo-pilot.md): automatic target lifecycle and durable export within an explicitly started workflow.
+
+- [Demo fixture controller and reviewed scenarios](docs/demo-fixture-controller.md): exact source pinning, bounded handler journeys, durable outbox and authenticated metrics.
+
+- [Independent fixture runner and assessor](docs/fixture-agents.md): reviewed scenario-controller protocol, separate credentials, all 120 assessments and automatic certification handoff.
+
+- [Engineering certification gate](docs/engineering-certification.md): immutable child inputs, independent fixture submission and current certificate validation before review readiness.
+
+- [Candidate-bound engineering telemetry](docs/engineering-telemetry.md): operator-approved child workflows, exact artifact/plan labels, verified evidence and guarded review readiness.
+
+- [Full Tempo traces and durable telemetry scheduling](docs/telemetry-scheduling.md): bounded V2 retrieval, durable timers, recovery, process deadlines and cancellation.
+
+- [Scoped telemetry adapters](docs/telemetry-adapters.md): Prometheus matrix queries, Loki log streams and partial Tempo search summaries; explicit private collection and optional authenticated evidence upload.
+
+- [Planning-to-pilot handoff](docs/planning-handoff.md): verified receipt/journal/Jira mapping, private spec/report output and local configuration reuse.
+
+- [Jira planning](docs/jira-planning.md): project/field discovery, evidence-backed DAG review, conservative issue creation and execution-contract publication.
+
+- Reviewed synthetic demo with immutable acceptance tests, private baseline/manifest generation and evidence-bound Jira ticket finalization.
+
+- Specification-bound read-only preflight with redacted diagnostics, generation checks and explicit unverified write/inference capabilities.
+
 - Optional Temporal engine with bounded retries, cancellation, replay tests and saved-result recovery.
-- Real opt-in Claude Code CLI and Jira Cloud adapters, isolated test execution, evidence-backed patches and scoped Jira result writeback.
+- Real opt-in Claude Code CLI, GitHub draft PR and Jira Cloud adapters, isolated test execution, evidence-backed patches, scoped Jira results and configured nonterminal status transitions.
 
 - Immutable typed execution tickets, scopes, evidence, worker requests/results, releases, and approval records bound to explicit environment instance and generation.
 - Persistent preview generation registry with optimistic updates, expiry checks, idempotent retries and closure tombstones.
@@ -40,13 +72,18 @@ python -m ruff format --check .
 - SQLite reference memory with evidence provenance, optimistic versions, conflict detection, graph edges, snapshots, and transactional change events.
 - Ticket transition guards and restartable local checkpoints with idempotency-key conflict detection.
 - Default-deny promotion policy: exact-release non-production authorization and explicit human approval for production.
-- A versioned **120-slot design catalog** (40 traces, 40 logs, 40 PromQL) and report aggregation. Query/assertion implementations are intentionally absent; this draft cannot issue a passing certificate.
+- A versioned [120-check certification engine](docs/certification.md) (40 traces, 40 logs, 40 PromQL) with deterministic predicates, authenticated evidence, immutable reports and explicit durable verification. Live service certification requires reviewed private queries/mappings/thresholds and independent fixture evidence.
 - Unit/adapter tests, a synthetic vertical slice, and CI configuration with no shipping steps.
 
 ## Design and delivery
 
+- [Full-suite completion criteria and remaining implementations](docs/suite-completion.md)
+
+- [Demo repository, pilot ticket and live-run checklist](docs/live-pilot-checklist.md)
 - [Grounded Phase 0 assessment](docs/phase-0-assessment.md)
 - [Phase 1 implementation, breaking changes and storage migration](docs/phase-1-foundation.md)
+- [Read-only preflight and readiness report](docs/preflight.md)
+- [Automatic draft PRs and Jira status transitions](docs/pr-and-jira-publication.md)
 - [Temporal, Claude Code and Jira runtime](docs/execution-runtime.md)
 - [Authenticated evidence and scoped context API](docs/authenticated-api.md)
 - [Architecture and trust boundaries](docs/architecture.md)
@@ -54,8 +91,10 @@ python -m ruff format --check .
 - [Phased plan and acceptance gates](docs/implementation-plan.md)
 - [Dynamic GCP preview environments: GitHub, Helm and Argo CD](docs/dynamic-environments.md)
 - [Agent contracts](docs/agent-contracts.md)
-- [Certification design](docs/certification.md)
+- [Deterministic certification](docs/certification.md)
 - [Validation and limitations](docs/validation.md)
 - [Public repository and security boundaries](SECURITY.md)
 
 The public repository contains only generic design and synthetic fixtures. Runtime evidence, credentials, internal service inventories, and infrastructure configuration belong in separately authorized private systems.
+
+Prepare one authorized preview with the [pilot setup command](docs/pilot-setup.md), then run [preflight](docs/preflight.md) against its generated execution spec. Setup registers metadata and uploads one baseline; it does not start work or provision an environment.

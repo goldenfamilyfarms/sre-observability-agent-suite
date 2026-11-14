@@ -1,0 +1,26 @@
+{
+  "schema_version": 2,
+  "execution_id": "synthetic-analysis-001",
+  "repository": "example/demo-service",
+  "scope": {
+    "environment": "development",
+    "environment_id": "preview-r1-pr1",
+    "generation": 1,
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "service": "demo-service"
+  },
+  "context_version": 0,
+  "files": [
+    "app.py",
+    "test_app.py"
+  ],
+  "source_artifact_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "intake_subject": "architecture-intake",
+  "assessor_subject": "service-assessor",
+  "project": "DEMO",
+  "workstream": "demo-observability",
+  "rollback_strategy": "Revert the reviewed change and rerun regression checks",
+  "expires_at": "2026-01-01T01:00:00+00:00",
+  "intake_queue": "sre-intake-v1",
+  "assessment_queue": "sre-assessment-v1"
+}

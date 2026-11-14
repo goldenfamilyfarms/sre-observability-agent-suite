@@ -6,16 +6,21 @@ import re
 from collections.abc import Callable
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from ..api_wire import envelope, evidence_from_wire, text
 from ..contracts import Environment
 from ..serialization import scope_from_dict
+from .certification import EngineeringCertification
 from .claude import ClaudeCodeWorker
 from .config import Settings
 from .evidence_client import EvidenceClient
+from .github import GitHubClient
 from .jira import JiraClient
 from .journal import Journal
+from .roles import RolePolicy
+from .telemetry import EngineeringTelemetry
 from .wire import canonical, digest, ticket_from_wire, ticket_json
 from .workspace import ContainerTests, make_patch, selected_source
 
@@ -39,6 +44,7 @@ class ExecutionRuntime:
         settings: Settings,
         *,
         jira: JiraClient | None = None,
+        github: GitHubClient | None = None,
         evidence: EvidenceClient | None = None,
         worker: ClaudeCodeWorker | None = None,
         tests: ContainerTests | None = None,
@@ -46,13 +52,48 @@ class ExecutionRuntime:
     ) -> None:
         self.settings = settings
         self.jira = jira or JiraClient(settings)
-        self.evidence = evidence or EvidenceClient(settings.evidence_url, settings.evidence_token)
+        self.github = github or GitHubClient(settings)
+        self.evidence = evidence or EvidenceClient(
+            settings.evidence_url, settings.evidence_token, local_ca_file=settings.evidence_ca_file
+        )
         self.worker = worker or ClaudeCodeWorker(settings)
         self.tests = tests or ContainerTests(settings)
         self.journal = Journal(settings.work_root)
         self.clock = clock
+        self.roles = RolePolicy.load(Path(settings.roles_config)) if settings.roles_config else None
+        if (self.roles is None) != (settings.worker_role is None):
+            raise ValueError("configure role policy and worker role together")
+        if self.roles:
+            self.roles.require(settings.worker_role, str(settings.worker_role))
+            if settings.worker_role not in self.roles.bindings:
+                raise ValueError("unknown worker role")
+            if settings.worker_role != "controller" and (
+                settings.jira_writes or settings.github_prs or settings.jira_transitions
+            ):
+                raise ValueError("stage workers cannot receive publication authority")
+        self.telemetry = (
+            EngineeringTelemetry(Path(settings.telemetry_config))
+            if settings.telemetry_config
+            else None
+        )
+        self.certification = (
+            EngineeringCertification(Path(settings.certification_config), self.telemetry)
+            if settings.certification_config
+            else None
+        )
         self.policy = digest(
             {
+                **(
+                    {
+                        "evidence_ca_sha256": hashlib.sha256(
+                            Path(settings.evidence_ca_file).read_bytes()
+                        ).hexdigest()
+                    }
+                    if settings.evidence_ca_file
+                    else {}
+                ),
+                **({"telemetry": self.telemetry.fingerprint} if self.telemetry else {}),
+                **({"certification": self.certification.fingerprint} if self.certification else {}),
                 "repository": settings.repository,
                 "jira_url": settings.jira_url,
                 "evidence_url": settings.evidence_url,
@@ -65,13 +106,24 @@ class ExecutionRuntime:
                 "model": settings.claude_model,
                 "timeout": settings.timeout,
                 "budget": settings.budget_usd,
+                **({"roles": self.roles.fingerprint} if self.roles else {}),
+                "publication_version": 1,
+                "github_prs": settings.github_prs if not self.roles else "controller-only",
+                "github_base": settings.github_base,
+                "jira_writes": settings.jira_writes if not self.roles else "controller-only",
+                "jira_transitions": [asdict(rule) for rule in settings.jira_transitions]
+                if not self.roles
+                else "controller-only",
             }
         )
 
     def prepare(
         self, spec: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
+        self.require_role("controller")
         key = execution_key(spec)
+        if self.telemetry and self.telemetry.policy.scope != scope_from_dict(spec["scope"]):
+            raise ValueError("telemetry policy differs from execution scope")
 
         def load() -> dict[str, Any]:
             ticket = self.jira.get_ticket(spec["ticket_key"], heartbeat)
@@ -88,17 +140,60 @@ class ExecutionRuntime:
                 "source": source,
                 "spec": spec,
                 "policy": self.policy,
+                **({"controller_policy": self.controller_policy()} if self.roles else {}),
             }
 
         manifest = self.journal.compute(key + ":manifest", spec, load, heartbeat)
-        reference = {"key": key, "manifest": digest(manifest)}
+        reference: dict[str, Any] = {"key": key, "manifest": digest(manifest)}
+        if self.roles:
+            reference["role_dispatch"] = self.roles.dispatch()
+        if self.telemetry:
+            reference["telemetry_required"] = True
+        if self.certification:
+            reference["certification_required"] = True
         self._guard(reference, heartbeat)
+        if self.settings.jira_transitions:
+
+            def guard() -> None:
+                self._guard(reference, heartbeat)
+
+            with self.journal.locked(key + ":publication", heartbeat):
+                self.jira.transition(
+                    spec["ticket_key"],
+                    key,
+                    reference["manifest"],
+                    digest(spec["scope"]),
+                    "in_progress",
+                    guard,
+                    heartbeat,
+                )
         return reference
+
+    def controller_policy(self) -> str:
+        return digest(
+            {
+                "github_prs": self.settings.github_prs,
+                "jira_writes": self.settings.jira_writes,
+                "jira_transitions": [asdict(r) for r in self.settings.jira_transitions],
+            }
+        )
+
+    def require_role(self, operation: str) -> None:
+        if self.roles:
+            self.roles.require(self.settings.worker_role, operation)
 
     def _guard(self, reference: dict[str, Any], heartbeat: Callable[[], None]) -> dict[str, Any]:
         manifest = self.journal.read(reference["key"] + ":manifest", reference["manifest"])
         if manifest["policy"] != self.policy or execution_key(manifest["spec"]) != reference["key"]:
             raise ValueError("execution policy or identity changed")
+        if self.roles:
+            self.roles.current()
+            if reference.get("role_dispatch") != self.roles.dispatch():
+                raise ValueError("role dispatch changed")
+            if self.settings.worker_role == "controller" and (
+                manifest["controller_policy"] != self.controller_policy()
+            ):
+                raise ValueError("controller publication policy changed")
         ticket = ticket_from_wire(manifest["ticket"])
         heartbeat()
         if self.jira.get_ticket(ticket.key, heartbeat) != ticket:
@@ -112,10 +207,14 @@ class ExecutionRuntime:
         return manifest
 
     def _results(
-        self, reference: dict[str, Any], results: list[dict[str, Any]]
+        self,
+        reference: dict[str, Any],
+        results: list[dict[str, Any]],
+        heartbeat: Callable[[], None] = lambda: None,
     ) -> list[dict[str, Any]]:
         loaded = []
         for index, result in enumerate(results):
+            heartbeat()
             if index >= len(STAGES) or result["role"] != STAGES[index]:
                 raise ValueError("stage order mismatch")
             key = reference["key"] + ":" + result["role"]
@@ -132,6 +231,12 @@ class ExecutionRuntime:
                 or evidence.expires_at != datetime.fromisoformat(value["expires_at"])
             ):
                 raise ValueError("stage evidence does not attest the saved artifact")
+            if self.roles:
+                self.roles.attest(result["role"], evidence)
+                if value.get("prior_evidence_sha256") != [
+                    r["evidence"]["sha256"] for r in results[:index]
+                ]:
+                    raise ValueError("stage does not attest the preceding artifacts")
             self.evidence.verify(evidence)
             loaded.append(value)
         return loaded
@@ -140,8 +245,9 @@ class ExecutionRuntime:
         self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
         reference, role, results = arguments["reference"], arguments["role"], arguments["results"]
+        self.require_role(role)
         manifest = self._guard(reference, heartbeat)
-        prior = self._results(reference, results)
+        prior = self._results(reference, results, heartbeat)
         if (
             len(prior) >= len(STAGES)
             or role != STAGES[len(prior)]
@@ -184,6 +290,8 @@ class ExecutionRuntime:
                     now + timedelta(hours=1), *(e.expires_at for e in ticket.evidence)
                 ).isoformat(),
             )
+            if self.roles:
+                result["prior_evidence_sha256"] = [r["evidence"]["sha256"] for r in results]
             return result
 
         key = reference["key"] + ":" + role
@@ -198,6 +306,8 @@ class ExecutionRuntime:
             datetime.fromisoformat(result["observed_at"]),
             datetime.fromisoformat(result["expires_at"]),
         )
+        if self.roles:
+            self.roles.attest(role, evidence)
         return {
             "role": role,
             "verdict": result["verdict"],
@@ -205,14 +315,88 @@ class ExecutionRuntime:
             "evidence": json.loads(canonical(asdict(evidence))),
         }
 
+    def prepare_telemetry(
+        self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
+    ) -> dict[str, Any]:
+        self.require_role("controller")
+        if self.telemetry is None:
+            raise ValueError("engineering telemetry is not authorized")
+        return self.telemetry.prepare(self, arguments, heartbeat)
+
+    def prepare_certification(
+        self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
+    ) -> dict[str, Any]:
+        self.require_role("controller")
+        if self.certification is None:
+            raise ValueError("engineering certification is not authorized")
+        return self.certification.plan(self, arguments, heartbeat)
+
+    def bind_certification(
+        self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
+    ) -> dict[str, Any]:
+        self.require_role("controller")
+        if self.certification is None:
+            raise ValueError("engineering certification is not authorized")
+        return self.certification.bind(self, arguments, heartbeat)
+
     def finish(
         self, arguments: dict[str, Any], heartbeat: Callable[[], None] = lambda: None
     ) -> dict[str, Any]:
+        self.require_role("controller")
+        with self.journal.locked(arguments["reference"]["key"] + ":publication", heartbeat):
+            return self._finish(arguments, heartbeat)
+
+    def _finish(self, arguments: dict[str, Any], heartbeat: Callable[[], None]) -> dict[str, Any]:
         reference, results = arguments["reference"], arguments["results"]
         manifest = self._guard(reference, heartbeat)
-        loaded = self._results(reference, results)
+        loaded = self._results(reference, results, heartbeat)
         ready = len(loaded) == 4 and all(r["verdict"] == "passed" for r in loaded)
+        telemetry = (
+            self.telemetry.verify(self, arguments, heartbeat) if ready and self.telemetry else None
+        )
+        if telemetry is not None:
+            ready = telemetry["ready"]
+        certification = (
+            self.certification.verify(self, arguments, heartbeat)
+            if ready and self.certification
+            else None
+        )
+        if certification is not None:
+            ready = certification["ready"]
         ticket = ticket_from_wire(manifest["ticket"])
+
+        def guard() -> None:
+            self._guard(reference, heartbeat)
+            self._results(reference, results, heartbeat)
+            if telemetry is not None and self.telemetry is not None:
+                if self.telemetry.verify(self, arguments, heartbeat) != telemetry:
+                    raise ValueError("telemetry attestation changed")
+            if certification is not None and self.certification is not None:
+                if self.certification.verify(self, arguments, heartbeat) != certification:
+                    raise ValueError("certification gate changed")
+            if pull_request is not None:
+                self.github.verify(pull_request, heartbeat)
+
+        pull_request: dict[str, Any] | None = telemetry["pull_request"] if telemetry else None
+        if ready and self.settings.github_prs and pull_request is None:
+            pull_request = self.github.publish(
+                reference["key"],
+                reference["manifest"],
+                results[0]["artifact"],
+                ticket.scope,
+                loaded[0],
+                guard,
+                heartbeat,
+            )
+        transitioned = self.jira.transition(
+            ticket.key,
+            reference["key"],
+            reference["manifest"],
+            digest(asdict(ticket.scope)),
+            "in_review" if ready else "blocked",
+            guard,
+            heartbeat,
+        )
         report = {
             "schema_version": 2,
             "execution_id": reference["key"],
@@ -221,20 +405,29 @@ class ExecutionRuntime:
             "outcome": "ready_for_review" if ready else "blocked",
             "manifest": reference["manifest"],
             "stages": results,
+            **({"telemetry": telemetry} if telemetry is not None else {}),
+            **({"certification": certification} if certification is not None else {}),
             "patch_sha256": hashlib.sha256(loaded[0].get("patch", "").encode()).hexdigest()
             if loaded
             else None,
+            "pull_request": pull_request,
+            "jira_transitioned": transitioned,
             "merged": False,
             "deployed": False,
         }
         # Normalize datetimes before idempotent remote comparison.
         report = json.loads(canonical(report))
-        reported = self.jira.publish(ticket.key, reference["key"], report)
+        reported = self.jira.publish(ticket.key, reference["key"], report, guard)
+        guard()
         self.journal.compute(reference["key"] + ":report", report, lambda: report, heartbeat)
         return {
             "execution_id": reference["key"],
             "outcome": report["outcome"],
             "jira_reported": reported,
+            "jira_transitioned": transitioned,
+            "pull_request": pull_request,
             "manifest": reference["manifest"],
             "patch_artifact": results[0]["artifact"] if results else None,
+            **({"telemetry": telemetry} if telemetry is not None else {}),
+            **({"certification": certification} if certification is not None else {}),
         }

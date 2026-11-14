@@ -3,7 +3,7 @@
 import json
 from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import StrEnum
 from importlib.resources import files
 
@@ -116,7 +116,11 @@ def certify(
     window_end: datetime,
     results: tuple[CheckResult, ...],
     now: datetime,
+    *,
+    collection_grace_seconds: int = 0,
 ) -> CertificationReport:
+    if type(collection_grace_seconds) is not int or not 0 <= collection_grace_seconds <= 300:
+        raise ValueError("invalid evidence collection grace")
     for stamp in (window_start, window_end, now):
         aware(stamp)
     if not window_start < window_end <= now:
@@ -140,7 +144,10 @@ def certify(
             reasons.append(f"{check.id}: result scope/version/window mismatch")
             continue
         if not result.evidence or not all(
-            item.valid_for(release.scope, now) and window_start <= item.observed_at <= window_end
+            item.valid_for(release.scope, now)
+            and window_start
+            <= item.observed_at
+            <= window_end + timedelta(seconds=collection_grace_seconds)
             for item in result.evidence
         ):
             reasons.append(f"{check.id}: missing, stale, or out-of-window evidence")

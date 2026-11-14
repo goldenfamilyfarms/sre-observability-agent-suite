@@ -1,0 +1,13 @@
+# ADR-021: independent fixture execution and assessment
+
+Status: accepted for the non-production pilot; live target acceptance pending. Date: 2026-11-14.
+
+Decision: implement a bounded HTTPS scenario-controller runner and a deterministic independent assessor. The reviewed fixture policy embeds the verification policy, maps every one of the 120 checks to an executed scenario/capability probe, and fixes expected telemetry values before observations are read. Four authenticated subjects separate runner, assessor, collector and verifier. Runner/assessor queues, subprocesses, environments and journals are separate. No model output defines the oracle or applicability at runtime.
+
+The runner saves request intent before each POST, uses a stable per-run/scenario idempotency key, and records bounded responses with exact candidate/plan/scope/window bindings. The target must implement durable deduplication and independently validate its candidate metadata. A missed window never authorizes new effects. Temporal waits for window boundaries and dispatches execution, evidence publication and assessment as separate activities. The assessor rereads runner evidence and checks all predefined response assertions before uploading the 120-slot fixture document. Not-applicable decisions still require a successful reviewed capability probe.
+
+Optional automatic dispatch is frozen into the engineering manifest. The parent starts the fixture child alongside scheduled telemetry, awaits the assessor and then runs certification. Manual signals cannot substitute evidence on the automatic path. Certification and gate consumption also validate the referenced runner proof. A cached PASSED result cannot conceal a newly failed evidence read or binding check.
+
+Alternatives: copying observed telemetry into expected values would make certification circular. Allowing an unconstrained agent shell to generate fixture traffic expands authority beyond reviewed scenarios. Assuming retries are exactly-once without a target contract would conceal duplicate effects. Providing universal service thresholds/fixtures would invent acceptance requirements.
+
+Consequences: private operators must supply the target scenario endpoint, meaningful expectations and credentials. This is an implemented controller protocol adapter, not a universal gRPC/database/messaging driver or a deployment attestation. Existing manual fixture workflows remain supported when automatic dispatch is absent. No merge/deploy/provisioning executor or production permission is added. See [setup and protocol](../fixture-agents.md) and [Temporal child-workflow semantics](https://docs.temporal.io/develop/python/workflows/child-workflows).

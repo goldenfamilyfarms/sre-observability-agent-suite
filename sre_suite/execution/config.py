@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse, urlsplit
 
 
-def https_url(value: str) -> str:
+def https_url(value: str, *, allow_loopback: bool = False) -> str:
     parsed = urlparse(value)
     if (
         parsed.scheme != "https"
@@ -17,7 +17,15 @@ def https_url(value: str) -> str:
         or parsed.password
         or parsed.query
         or parsed.fragment
-        or parsed.port not in (None, 443)
+        or (
+            parsed.port not in (None, 443)
+            and not (
+                allow_loopback
+                and parsed.hostname in {"127.0.0.1", "localhost"}
+                and parsed.port is not None
+                and 1024 <= parsed.port <= 65535
+            )
+        )
     ):
         raise ValueError("expected a credential-free HTTPS URL")
     return value.rstrip("/")
@@ -50,6 +58,46 @@ def required(env: Mapping[str, str], name: str) -> str:
 
 
 @dataclass(frozen=True)
+class TransitionRule:
+    milestone: str
+    transition_id: str
+    status_id: str
+    from_status_ids: tuple[str, ...]
+
+
+def transition_rules(env: Mapping[str, str]) -> tuple[TransitionRule, ...]:
+    from ..api_wire import decode, fields
+
+    raw = fields(
+        decode(required(env, "SRE_JIRA_TRANSITIONS_JSON").encode()),
+        {"in_progress", "in_review", "blocked"},
+    )
+    result = []
+    for milestone in sorted(raw):
+        rule = fields(raw[milestone], {"transition_id", "status_id", "from_status_ids"})
+        sources = rule["from_status_ids"]
+        if (
+            not isinstance(sources, list)
+            or not 1 <= len(sources) <= 20
+            or any(
+                not isinstance(x, str) or not re.fullmatch(r"[1-9][0-9]*", x)
+                for x in [rule["transition_id"], rule["status_id"], *sources]
+            )
+            or rule["status_id"] in sources
+            or len(set(sources)) != len(sources)
+        ):
+            raise ValueError("invalid Jira transition IDs or source statuses")
+        result.append(
+            TransitionRule(
+                milestone, str(rule["transition_id"]), str(rule["status_id"]), tuple(sources)
+            )
+        )
+    if len({r.status_id for r in result}) != 3:
+        raise ValueError("milestones must have distinct target statuses")
+    return tuple(result)
+
+
+@dataclass(frozen=True)
 class Settings:
     jira_url: str
     jira_email: str
@@ -72,6 +120,15 @@ class Settings:
     claude_enabled: bool
     timeout: int = 300
     budget_usd: float = 2.0
+    github_prs: bool = False
+    github_token: str = field(default="", repr=False)
+    github_base: str = "main"
+    jira_transitions: tuple[TransitionRule, ...] = ()
+    evidence_ca_file: str | None = None
+    telemetry_config: str | None = None
+    certification_config: str | None = None
+    roles_config: str | None = None
+    worker_role: str | None = None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> "Settings":
@@ -115,6 +172,20 @@ class Settings:
         statuses = tuple(required(env, "SRE_JIRA_DONE_STATUSES").split(","))
         if any(not status.strip() for status in statuses):
             raise ValueError("invalid Jira dependency statuses")
+        github_prs = flag(env, "SRE_GITHUB_PRS_ENABLED")
+        github_token = required(env, "SRE_GITHUB_TOKEN") if github_prs else ""
+        github_base = env.get("SRE_GITHUB_BASE_BRANCH", "main")
+        if (
+            not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_/-]{0,150}", github_base)
+            or "//" in github_base
+            or github_base.endswith("/")
+            or github_base.startswith("sre/run-")
+        ):
+            raise ValueError("invalid or reserved GitHub base branch")
+        transitions_enabled = flag(env, "SRE_JIRA_TRANSITIONS_ENABLED")
+        if transitions_enabled and (not github_prs or not flag(env, "SRE_JIRA_WRITES_ENABLED")):
+            raise ValueError("Jira transitions require PR publication and Jira writes enabled")
+        rules = transition_rules(env) if transitions_enabled else ()
         return cls(
             https_url(required(env, "SRE_JIRA_BASE_URL")),
             required(env, "SRE_JIRA_EMAIL"),
@@ -123,7 +194,10 @@ class Settings:
             field_name,
             statuses,
             flag(env, "SRE_JIRA_WRITES_ENABLED"),
-            https_url(required(env, "SRE_EVIDENCE_API_URL")),
+            https_url(
+                required(env, "SRE_EVIDENCE_API_URL"),
+                allow_loopback=bool(env.get("SRE_EVIDENCE_CA_FILE")),
+            ),
             required(env, "SRE_EVIDENCE_API_TOKEN"),
             repository,
             repo_path,
@@ -133,10 +207,21 @@ class Settings:
             tuple(command),
             required(env, "SRE_CLAUDE_BINARY"),
             required(env, "SRE_CLAUDE_MODEL"),
-            required(env, "ANTHROPIC_API_KEY"),
+            ""
+            if env.get("SRE_ENGINEERING_ROLE") in {"controller", "test"}
+            else required(env, "ANTHROPIC_API_KEY"),
             flag(env, "SRE_CLAUDE_ENABLED"),
             timeout,
             budget,
+            github_prs,
+            github_token,
+            github_base,
+            rules,
+            env.get("SRE_EVIDENCE_CA_FILE") or None,
+            env.get("SRE_ENGINEERING_TELEMETRY_CONFIG") or None,
+            env.get("SRE_ENGINEERING_CERTIFICATION_CONFIG") or None,
+            env.get("SRE_ENGINEERING_ROLES_CONFIG") or None,
+            env.get("SRE_ENGINEERING_ROLE") or None,
         )
 
 

@@ -123,6 +123,7 @@ class Fixture:
         binary.write_text("""#!/usr/bin/env python3
 import json, os, sys
 assert 'SRE_JIRA_API_TOKEN' not in os.environ
+assert 'SRE_GITHUB_TOKEN' not in os.environ
 assert '--tools' in sys.argv and sys.argv[sys.argv.index('--tools')+1] == ''
 assert '--restricted' in sys.argv and '--bare' in sys.argv
 role = json.load(sys.stdin)['role']

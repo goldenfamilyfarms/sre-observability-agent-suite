@@ -1,0 +1,14 @@
+{
+  "traces": {
+    "base_url": "https://otlp.example.invalid",
+    "authorization_env": "SRE_DEMO_TRACES_AUTH",
+    "tenant_env": null,
+    "ca_env": null
+  },
+  "logs": {
+    "base_url": "https://loki.example.invalid",
+    "authorization_env": "SRE_DEMO_LOGS_AUTH",
+    "tenant_env": null,
+    "ca_env": null
+  }
+}

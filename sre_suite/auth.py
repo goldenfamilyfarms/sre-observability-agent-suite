@@ -16,9 +16,22 @@ from .contracts import Scope, aware
 
 
 class Action(StrEnum):
+    PREVIEW_REGISTER = "preview:register"
     EVIDENCE_WRITE = "evidence:write"
     EVIDENCE_READ = "evidence:read"
     CONTEXT_READ = "context:read"
+    FINDING_PROPOSE = "finding:propose"
+    FINDING_RECONCILE = "finding:reconcile"
+    APPROVAL_WRITE = "approval:write"
+    APPROVAL_READ = "approval:read"
+    EVENT_READ = "event:read"
+    EVENT_ACK = "event:ack"
+    ARTIFACT_WRITE = "artifact:write"
+    ARTIFACT_READ = "artifact:read"
+    ENVIRONMENT_REGISTER = "environment:register"
+
+
+WORKER_ACTIONS = (Action.EVIDENCE_WRITE, Action.EVIDENCE_READ, Action.CONTEXT_READ)
 
 
 @dataclass(frozen=True)

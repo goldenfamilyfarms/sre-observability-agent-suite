@@ -1,8 +1,12 @@
 """Bounded HTTPS requests with redirect refusal and redacted failures."""
 
 import json
+import ssl
+from collections.abc import Mapping
+from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.parse import urlparse
+from urllib.request import HTTPRedirectHandler, HTTPSHandler, Request, build_opener
 
 from ..api_wire import decode
 from .config import https_url
@@ -22,10 +26,36 @@ class NoRedirect(HTTPRedirectHandler):
 
 
 class JsonHttp:
-    def __init__(self, base: str, authorization: str) -> None:
-        self.base = https_url(base)
+    def __init__(
+        self,
+        base: str,
+        authorization: str | None,
+        *,
+        headers: Mapping[str, str] | None = None,
+        timeout: float = 20,
+        local_ca_file: str | None = None,
+        expected_status: int | None = None,
+    ) -> None:
+        if not 0 < timeout <= 20:
+            raise ValueError("invalid HTTP timeout")
+        if expected_status is not None and (
+            type(expected_status) is not int or not 200 <= expected_status <= 299
+        ):
+            raise ValueError("invalid expected HTTP acknowledgement")
+        self._expected_status = expected_status
+        self.base = https_url(base, allow_loopback=bool(local_ca_file))
         self._authorization = authorization
-        self._opener = build_opener(NoRedirect())
+        self._headers = dict(headers or {})
+        self._timeout = timeout
+        if local_ca_file:
+            if urlparse(self.base).hostname not in {"127.0.0.1", "localhost"}:
+                raise ValueError("pilot CA overrides are restricted to loopback evidence services")
+            if not Path(local_ca_file).is_absolute():
+                raise ValueError("pilot CA path must be absolute")
+            context = ssl.create_default_context(cafile=local_ca_file)
+            self._opener = build_opener(NoRedirect(), HTTPSHandler(context=context))
+        else:
+            self._opener = build_opener(NoRedirect())
 
     def call(self, method: str, path: str, payload: object = None) -> object:
         if not path.startswith("/") or path.startswith("//") or ".." in path:
@@ -40,13 +70,16 @@ class JsonHttp:
             body,
             method=method,
             headers={
-                "Authorization": self._authorization,
+                **({"Authorization": self._authorization} if self._authorization else {}),
+                **self._headers,
                 "Content-Type": "application/json",
                 "Accept": "application/json",
             },
         )
         try:
-            with self._opener.open(request, timeout=20) as response:
+            with self._opener.open(request, timeout=self._timeout) as response:
+                if self._expected_status is not None and response.status != self._expected_status:
+                    raise RemoteError(response.status)
                 raw = response.read(1_500_001)
                 if len(raw) > 1_500_000:
                     raise ValueError("remote response too large")

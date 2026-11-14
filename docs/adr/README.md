@@ -12,3 +12,22 @@
 | [008](008-postgresql-persistence.md) | Shared guards, explicit PostgreSQL migrations and serialized pilot writes | Accepted for Phase 1 persistence pilot |
 | [009](009-authenticated-scoped-api.md) | Authenticated service grants and transactional scoped evidence/context API | Accepted for Phase 1 preview pilot |
 | [010](010-temporal-execution-pilot.md) | Temporal workflow, restricted Claude Code and scoped Jira execution | Accepted for Phase 1 pilot; live-account acceptance pending |
+| [011](011-draft-pr-and-jira-transitions.md) | Guarded draft PR publication and nonterminal Jira transitions | Accepted for execution pilot; live acceptance pending |
+| [012](012-read-only-preflight.md) | Read-only preflight with explicit unverified capabilities | Accepted for execution pilot |
+| [013](013-pilot-bootstrap.md) | Opt-in controller registration and replayable private pilot setup | Accepted for Phase 1 pilot |
+| [014](014-local-pilot-lifecycle.md) | Explicit loopback services, private credentials and persistent restart | Accepted for local pilot |
+| [015](015-jira-plan-publication.md) | Scoped plan review, durable creation intent and conservative Jira reconciliation | Accepted for planning pilot; live acceptance pending |
+| [016](016-scoped-telemetry-adapters.md) | Scoped Prometheus, Loki and Tempo observations with explicit evidence capture | Accepted for collection pilot; live acceptance pending |
+| [017](017-durable-telemetry-and-full-traces.md) | Full Tempo trace evidence and finite durable collection | Accepted for telemetry pilot; live acceptance pending |
+| [018](018-engineering-telemetry-binding.md) | Candidate-bound engineering telemetry child workflows | Accepted for the execution pilot |
+| [019](019-deterministic-certification.md) | Evidence-backed deterministic 120-check certification | Accepted for the source-candidate pilot |
+| [020](020-engineering-certification-gate.md) | Certification child workflow and current engineering readiness gate | Accepted for the opt-in pilot |
+| [021](021-independent-fixture-assessment.md) | Independent scenario execution and 120-check assessment | Accepted for the non-production pilot |
+| [022](022-demo-fixture-controller.md) | Pinned demo target, durable fixture effects and reviewed capability mapping | Accepted for the local non-production pilot |
+| [023](023-managed-demo-lifecycle.md) | Managed target startup and durable export before engineering collection | Accepted for the local non-production pilot |
+| [024](024-local-telemetry-backends.md) | Local telemetry backends, authenticated scraping and real pilot acceptance | Accepted for the local non-production pilot |
+| [025](025-local-full-certification.md) | Local-stack wiring and full certification workflow acceptance | Accepted for the source-candidate engineering pilot |
+| [026](026-measured-demo-certification.md) | Measured demo instrumentation and infrastructure health evidence | Accepted for the local pilot |
+| [027](027-intake-assessment-planning.md) | Pinned source discovery, independent assessment and guarded planning | Accepted for bounded non-production discovery |
+| [028](028-governed-suite-agents.md) | Authenticated agent roles, suite orchestration, shipping and deployment controls | Implemented for bounded v1; live acceptance pending |
+| [029](029-image-build-target-fixtures.md) | Independent image build/registry attestation and deployed-target fixtures | Implemented; private live acceptance pending |

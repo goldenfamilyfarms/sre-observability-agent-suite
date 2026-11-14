@@ -38,7 +38,7 @@ def migrations() -> tuple[Migration, ...]:
     directory = files("sre_suite").joinpath("migrations")
     return tuple(
         Migration(int(name[:3]), name, directory.joinpath(name).read_text(encoding="utf-8"))
-        for name in ("001_foundation.sql", "002_scope_guards.sql")
+        for name in ("001_foundation.sql", "002_scope_guards.sql", "003_control_plane.sql")
     )
 
 

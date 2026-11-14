@@ -47,10 +47,14 @@ class EvidenceContextApi:
         database: Callable[[], Database],
         *,
         clock: Callable[[], datetime] = utc_now,
+        allow_preview_registration: bool = False,
     ) -> None:
+        if type(allow_preview_registration) is not bool:
+            raise ValueError("registration opt-in must be boolean")
         self._auth = authenticator
         self._database = database
         self._clock = clock
+        self._allow_preview_registration = allow_preview_registration
 
     def __call__(self, environ: WSGIEnvironment, start_response: StartResponse) -> list[bytes]:
         try:
@@ -92,16 +96,24 @@ class EvidenceContextApi:
             raise ApiError(400, "query_parameters_not_supported")
         if environ.get("REQUEST_METHOD") != "POST":
             raise ApiError(405, "method_not_allowed")
-        action = self.ROUTES.get(environ.get("PATH_INFO", ""))
+        path = environ.get("PATH_INFO", "")
+        action = self.ROUTES.get(path)
+        if path == "/v1/previews/register" and self._allow_preview_registration:
+            action = Action.PREVIEW_REGISTER
         if action is None:
             raise ApiError(404, "not_found")
         raw_body = self._body(environ)
         try:
             raw = api_wire.decode(raw_body)
+            preview = None
+            expected_generation = 0
             evidence = None
             content = b""
             expected_version = None
-            if action is Action.CONTEXT_READ:
+            if action is Action.PREVIEW_REGISTER:
+                preview, expected_generation = api_wire.registration_from_wire(raw)
+                scope = preview.scope
+            elif action is Action.CONTEXT_READ:
                 payload = api_wire.envelope(raw, {"scope", "expected_version"})
                 scope = scope_from_dict(payload["scope"])
                 api_wire.text(scope.service, 128)
@@ -132,10 +144,21 @@ class EvidenceContextApi:
             with database.transaction(write=True):
                 repositories = ApiRepositories(database)
                 now = self._authorize(authorization, credential.subject, scope, action)
+                if preview is not None:
+                    try:
+                        repositories.previews.start(preview, expected_generation, now)
+                    except ValueError as error:
+                        raise ApiError(409, "preview_registration_conflict") from error
                 self._current(repositories, scope, now)
                 context_evidence: tuple[Evidence, ...] = ()
                 try:
-                    if action is Action.CONTEXT_READ:
+                    if preview is not None:
+                        response = {
+                            "schema_version": 2,
+                            "preview": asdict(preview),
+                            "expected_generation": expected_generation,
+                        }
+                    elif action is Action.CONTEXT_READ:
                         snapshot = repositories.knowledge.get_context_snapshot(scope, now)
                         if expected_version is not None and snapshot.version != expected_version:
                             raise ApiError(409, "context_changed")

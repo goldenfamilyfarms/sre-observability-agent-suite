@@ -12,7 +12,11 @@ class CertificationTests(unittest.TestCase):
     def setUp(self):
         ticket = example_ticket(NOW)
         self.release = Release(ticket.scope, "sha256:" + "c" * 64, "sha256:" + "d" * 64, ("ci",))
-        self.draft = load_catalog()
+        executable = load_catalog()
+        self.draft = Catalog(
+            "test-draft",
+            tuple(replace(c, query_template=None, assertion=None) for c in executable.checks),
+        )
         # Fake adapter definitions exercise aggregation only, not real telemetry checks.
         self.catalog = Catalog(
             "test-only",

@@ -1,0 +1,15 @@
+# ADR-019: deterministic evidence-backed 120-check certification
+
+Status: accepted for source-candidate verification; live service acceptance pending. Date: 2026-11-14.
+
+Decision: replace null catalog predicates with versioned parameterized implementations for every existing 40/40/40 slot. Predicate choice is packaged code; service-specific source profiles, field selection, thresholds and applicability come from a strict reviewed private policy. No model-generated expressions, eval, shell or arbitrary regex execute. Authenticate independent fixture, collector and verifier subjects. Bind actual observation bytes, source/profile/query identity, candidate/plan, exact window, context/generation and catalog/policy fingerprints before computing results.
+
+A deterministic assertion is distinct from query success. Every slot is accounted for; insufficient/malformed/partial data cannot pass. Core checks cannot be made not applicable. Other NA outcomes require a matching independent assessor decision and justification. Fixture expectations support coverage, propagation, controlled numerical results and known expected-failure scenarios; the engine does not synthesize its own oracle from observed output. Operator policy quality and instrumentation truth remain external trust boundaries.
+
+Reports are immutable private artifacts, optionally published by an explicitly started Temporal certification workflow. The runner rechecks scope/freshness on every attempt, saves exact report bytes for idempotent publication, and returns only compact evidence receipts to workflow history. A dedicated process supplies cancellation and hard deadlines. Consumers resolve report bytes and current evidence through the gate reader; historical receipts alone do not authorize shipping.
+
+Alternative: treating 120 successful HTTP requests as certification would certify empty or unrelated data. Filling default service thresholds would invent unverified operating requirements. Letting tickets set arbitrary predicates or self-attest applicability would bypass independent verification. Requiring one monolithic universal telemetry query would prevent distinct metric, fixture and capability mappings.
+
+Consequences: credentials alone are insufficient; service owners must review mappings/thresholds and provide independent fixture/applicability evidence. The engine supports up to 120 bounded captured sources and all 120 catalog definitions; it does not add a source-query planner or fixture runner. Certification remains an explicit stage after engineering observation collection. Passing source-candidate certification is neither deployed-image provenance nor human production approval. Live target acceptance, automated capability discovery, fixture runners, approval-service governance and cloud shipping remain separate work.
+
+See [operator guide](../certification.md), [catalog](../check-catalog.md), [tests](../../tests/test_verification.py) and [Temporal tests](../../orchestration_tests/test_certification.py).

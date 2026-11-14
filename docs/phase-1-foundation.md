@@ -66,3 +66,15 @@ The subsequent [PostgreSQL increment](postgresql.md) implements the adapter and 
 ## Increment 4: durable execution pilot
 
 Version 0.5.0 adds optional Temporal orchestration, restricted Claude Code CLI execution, scoped Jira ticket intake/writeback, isolated container tests and artifact recovery. Existing version 2 scope contracts and database migrations remain unchanged. Follow the [runtime guide](execution-runtime.md); live-account acceptance remains pending private configuration.
+
+## Increment 5: review artifact publication
+
+Version 0.6.0 adds explicit GitHub PR publication and configured nonterminal Jira transitions without changing preview contracts or database migrations. Drain/reconcile old runs before upgrading: the manifest policy fingerprint now includes publication authority. See [setup, retry and partial-completion behavior](pr-and-jira-publication.md).
+
+## Increment 6: read-only preflight
+
+Version 0.7.0 adds a specification-bound readiness report and read-only service/local prerequisite probes. Preview contracts, database migrations, runtime policy fingerprints and execution authorization remain unchanged. See [preflight exit codes and limitations](preflight.md); a successful read observation does not prove write or inference authority.
+
+Version 0.8.0 adds an opt-in controller registration endpoint and [pilot setup command](pilot-setup.md), with separate exact-scope registration authority, idempotent evidence upload and private execution-spec output. Worker grants, runtime generation fencing, PostgreSQL migrations and production policy remain unchanged.
+
+Version 0.9.0 adds [explicit local startup](local-pilot.md): persistent PostgreSQL and Temporal development state, a local TLS host, scoped credential provisioning and isolated worker configuration. Preview/generation contracts and migrations remain unchanged. Workflow starts remain explicit.

@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -42,13 +43,26 @@ async def run(args: argparse.Namespace) -> None:
     queue = os.environ.get("SRE_TEMPORAL_TASK_QUEUE", "sre-engineering-v1")
     if args.command == "worker":
         settings = Settings.from_env(os.environ)
-        activities = Activities(ExecutionRuntime(settings))
+        runtime = ExecutionRuntime(settings)
+        activities = Activities(runtime)
+        stage_only = bool(runtime.roles and settings.worker_role != "controller")
+        if runtime.roles:
+            queue = runtime.roles.bindings[str(settings.worker_role)]["queue"]
         with ThreadPoolExecutor(max_workers=2) as executor:
             worker = Worker(
                 client,
                 task_queue=queue,
-                workflows=[TicketExecution],
-                activities=[activities.prepare, activities.stage, activities.finish],
+                workflows=[] if stage_only else [TicketExecution],
+                activities=[activities.stage]
+                if stage_only
+                else [
+                    activities.prepare,
+                    *([] if runtime.roles else [activities.stage]),
+                    activities.finish,
+                    activities.telemetry,
+                    activities.certification,
+                    activities.certification_input,
+                ],
                 activity_executor=executor,
                 max_concurrent_activities=2,
                 max_heartbeat_throttle_interval=timedelta(seconds=1),
@@ -70,6 +84,39 @@ async def run(args: argparse.Namespace) -> None:
             id_conflict_policy=WorkflowIDConflictPolicy.FAIL,
         )
         print(json.dumps({"workflow_id": identity}))
+    elif args.command in {"export-telemetry-plan", "export-certification-plan"}:
+        from ..telemetry.schedule_config import private_path
+        from .wire import canonical
+
+        destination = Path(args.output)
+        private_path(destination.parent, directory=True)
+        value = await client.get_workflow_handle(args.workflow_id).query(
+            "certification_plan"
+            if args.command == "export-certification-plan"
+            else "telemetry_plan"
+        )
+        if not isinstance(value, dict):
+            raise ValueError("requested plan is not available yet")
+        descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+            output.write(canonical(value) + "\n")
+        print(
+            json.dumps({args.command.removeprefix("export-").replace("-", "_") + "_exported": True})
+        )
+    elif args.command == "submit-certification-fixture":
+        from dataclasses import asdict
+
+        from ..api_wire import evidence_from_wire
+        from ..verification.config import private_document
+        from .wire import canonical
+
+        evidence = evidence_from_wire(private_document(Path(args.evidence), 8192))
+        if not re.fullmatch(r"sre-[0-9a-f]{64}", args.workflow_id):
+            raise ValueError("expected engineering workflow identity")
+        await client.get_workflow_handle(args.workflow_id).signal(
+            "submit_certification_fixture", json.loads(canonical(asdict(evidence)))
+        )
+        print(json.dumps({"fixture_submitted": True, "verified": False}))
     elif args.command == "cancel":
         await client.get_workflow_handle(args.workflow_id).cancel()
         print(json.dumps({"cancellation_requested": True}))
@@ -94,22 +141,73 @@ def main() -> None:
     commands.add_parser("worker")
     commands.add_parser("check-config")
     commands.add_parser("start").add_argument("spec")
+    commands.add_parser("preflight").add_argument("spec")
+    pilot = commands.add_parser("pilot-setup")
+    pilot.add_argument("manifest")
+    pilot.add_argument("--baseline", required=True)
+    pilot.add_argument("--output", required=True)
     export = commands.add_parser("export-patch")
     export.add_argument("workflow_id")
     export.add_argument("--digest", required=True)
     export.add_argument("--output", required=True)
+    for name in ("export-telemetry-plan", "export-certification-plan"):
+        plan = commands.add_parser(name)
+        plan.add_argument("workflow_id")
+        plan.add_argument("--output", required=True)
+    submission = commands.add_parser("submit-certification-fixture")
+    submission.add_argument("workflow_id")
+    submission.add_argument("--evidence", required=True)
     for name in ("status", "result", "cancel"):
         commands.add_parser(name).add_argument("workflow_id")
     args = parser.parse_args()
     try:
-        if args.command == "check-config":
+        if args.command == "pilot-setup":
+            from .pilot import PilotSetupError, setup_pilot
+
+            try:
+                result = setup_pilot(
+                    os.environ, Path(args.manifest), Path(args.baseline), Path(args.output)
+                )
+            except PilotSetupError as error:
+                print(
+                    json.dumps(
+                        {
+                            "status": "failed",
+                            "phase": error.phase,
+                            "remote_changes_may_exist": error.phase != "validation",
+                        }
+                    )
+                )
+                raise SystemExit(1) from None
+            print(json.dumps(result))
+        elif args.command == "preflight":
+            from .readiness import exit_code, run_preflight
+
+            result = asyncio.run(run_preflight(os.environ, Path(args.spec)))
+            print(json.dumps(result, indent=2))
+            raise SystemExit(exit_code(result))
+        elif args.command == "check-config":
             settings = Settings.from_env(os.environ)
+            from .certification import EngineeringCertification
+            from .telemetry import EngineeringTelemetry
+
+            telemetry = (
+                EngineeringTelemetry(Path(settings.telemetry_config))
+                if settings.telemetry_config
+                else None
+            )
+            if settings.certification_config:
+                EngineeringCertification(Path(settings.certification_config), telemetry)
             print(
                 json.dumps(
                     {
                         "configuration_valid": True,
+                        "engineering_telemetry_enabled": bool(settings.telemetry_config),
+                        "engineering_certification_enabled": bool(settings.certification_config),
                         "claude_enabled": settings.claude_enabled,
                         "jira_writes_enabled": settings.jira_writes,
+                        "github_prs_enabled": settings.github_prs,
+                        "jira_transitions_enabled": bool(settings.jira_transitions),
                     }
                 )
             )

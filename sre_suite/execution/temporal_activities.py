@@ -48,3 +48,15 @@ class Activities:
     @activity.defn(name="record_result")
     def finish(self, value: dict[str, Any]) -> dict[str, Any]:
         return self._call(self.runtime.finish, value)
+
+    @activity.defn(name="prepare_engineering_telemetry")
+    def telemetry(self, value: dict[str, Any]) -> dict[str, Any]:
+        return self._call(self.runtime.prepare_telemetry, value)
+
+    @activity.defn(name="prepare_engineering_certification")
+    def certification(self, value: dict[str, Any]) -> dict[str, Any]:
+        return self._call(self.runtime.prepare_certification, value)
+
+    @activity.defn(name="bind_engineering_certification")
+    def certification_input(self, value: dict[str, Any]) -> dict[str, Any]:
+        return self._call(self.runtime.bind_certification, value)

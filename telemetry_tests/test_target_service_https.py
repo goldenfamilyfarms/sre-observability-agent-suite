@@ -168,7 +168,11 @@ class TargetHttpsTests(unittest.TestCase):
                 body = self.rfile.read(int(self.headers["Content-Length"]))
                 calls.append((self.path, body, self.headers["Authorization"]))
                 response = (
-                    (b'{"partialSuccess":{"rejectedSpans":"1"}}' if partial[0] else b"{}")
+                    (
+                        b'{"partialSuccess":{"rejectedSpans":"1"}}'
+                        if partial[0]
+                        else b'{"partialSuccess":{}}'
+                    )
                     if self.path == "/v1/traces"
                     else b""
                 )

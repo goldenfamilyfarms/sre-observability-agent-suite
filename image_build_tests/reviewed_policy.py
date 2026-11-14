@@ -118,6 +118,7 @@ def reviewed(scope, candidate, image, config):
     rule(
         "LOGS-013",
         {"path": "/body/route", "values": ["/health", "/unicode", "/error"], "max_length": 20},
+        scenario="unicode",
     )
     rule("LOGS-014", {"path": "/body/trace_id"}, expected=["a" * 32])
     rule(

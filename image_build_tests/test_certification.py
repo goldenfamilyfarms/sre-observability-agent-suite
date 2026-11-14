@@ -436,7 +436,8 @@ class ImageCertificationTests(test_pipeline.ImagePipelineTests):
             for field in ("artifact_digest", "plan_digest"):
                 changed = copy.deepcopy(verification_input)
                 changed["release"][field] = "sha256:" + "e" * 64
-                self.assertNotEqual(engine.run(changed)["verdict"], "PASSED")
+                bad = engine.run(changed)
+                self.assertTrue(all(r["outcome"] != "PASS" for r in bad["results"]))
                 with self.assertRaises(ValueError):
                     verify(proof, changed, d.evidence, datetime.now(UTC))
             for field, value in (("environment_id", "different-preview"), ("generation", 2)):
@@ -446,7 +447,11 @@ class ImageCertificationTests(test_pipeline.ImagePipelineTests):
                     engine.run(changed)
             missing = copy.deepcopy(verification_input)
             missing["observations"] = missing["observations"][:-1]
-            self.assertNotEqual(engine.run(missing)["verdict"], "PASSED")
+            bad = engine.run(missing)
+            self.assertEqual(
+                next(r["outcome"] for r in bad["results"] if r["check_id"] == "TRACES-027"),
+                "INCONCLUSIVE",
+            )
             registry = PreviewRegistry(str(root / "evidence.db"))
             try:
                 registry.start(

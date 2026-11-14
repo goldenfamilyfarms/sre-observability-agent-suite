@@ -8,7 +8,7 @@ from pathlib import Path
 from sre_suite.api_wire import evidence_from_wire
 from sre_suite.fixtures.target_service import validate, verify
 from sre_suite.target_service.prepare import export_reference, prepare
-from sre_suite.target_service.reference import State, resource
+from sre_suite.target_service.reference import State, acknowledge_trace, resource
 from tests.delivery_fixture import DeliveryFixture
 from tests.fixtures_fixture import FixtureAgentFixture
 from tests.test_foundation import NOW
@@ -75,6 +75,24 @@ class ReferenceTests(unittest.TestCase):
             }
             with self.assertRaises(ValueError):
                 resource(env)
+
+    def test_trace_acknowledgements_accept_omitted_zero_and_reject_loss_or_warning(self):
+        for value in (
+            {},
+            {"partialSuccess": {}},
+            {"partialSuccess": {"rejectedSpans": "0"}},
+            {"partialSuccess": {"rejectedSpans": 0, "errorMessage": ""}},
+        ):
+            acknowledge_trace(value)
+        for value in (
+            {"partialSuccess": {"rejectedSpans": "1"}},
+            {"partialSuccess": {"errorMessage": "warning"}},
+            {"partialSuccess": {"rejectedSpans": False}},
+            {"partialSuccess": []},
+            {"unknown": 0},
+        ):
+            with self.assertRaises(ValueError):
+                acknowledge_trace(value)
 
     def test_export_is_standalone_and_refuses_overwrite(self):
         export_reference(self.root / "reference")

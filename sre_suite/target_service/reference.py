@@ -264,6 +264,23 @@ class NoRedirect(HTTPRedirectHandler):
         return None
 
 
+def acknowledge_trace(value: object) -> None:
+    if value == {}:
+        return
+    if not isinstance(value, dict) or set(value) != {"partialSuccess"}:
+        raise ValueError("invalid trace acknowledgement")
+    partial = value["partialSuccess"]
+    if not isinstance(partial, dict) or set(partial) - {"rejectedSpans", "errorMessage"}:
+        raise ValueError("invalid trace acknowledgement")
+    rejected = partial.get("rejectedSpans", "0")
+    if (
+        type(rejected) not in (int, str)
+        or str(rejected) != "0"
+        or partial.get("errorMessage", "") != ""
+    ):
+        raise ValueError("partial trace export rejected")
+
+
 def export_once(state: State, env: dict[str, str]) -> int:
     delivered = 0
     for key, signal, payload in state.pending():
@@ -299,9 +316,7 @@ def export_once(state: State, env: dict[str, str]) -> int:
             if len(raw) > 65536 or reply.status != (200 if signal == "traces" else 204):
                 raise ValueError("telemetry export rejected")
             if signal == "traces":
-                response = json.loads(raw)
-                if response != {} and response != {"partialSuccess": {"rejectedSpans": "0"}}:
-                    raise ValueError("partial trace export rejected")
+                acknowledge_trace(json.loads(raw))
             elif raw:
                 raise ValueError("invalid log export acknowledgement")
         state.acknowledge(key, signal)

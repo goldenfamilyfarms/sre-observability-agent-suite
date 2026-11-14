@@ -48,6 +48,8 @@ jobs:
           python -m sre_suite.execution.cli pilot-setup --help
           python -m sre_suite.local_pilot --help
           python -m sre_suite.pilot_demo --help
+          python -m sre_suite.fixtures --help
+          python -m sre_suite.fixtures.child --help
           python -m sre_suite.verification --help
           python -m sre_suite.verification.child --help
           python -m sre_suite.telemetry --help

@@ -106,7 +106,8 @@ class CertificationEngine:
                     "window_start",
                     "window_end",
                     "checks",
-                },
+                }
+                | ({"execution"} if "execution" in fixture else set()),
             )
             if (
                 fixture["schema_version"] != 2
@@ -121,6 +122,10 @@ class CertificationEngine:
             ):
                 raise ValueError("fixture binding mismatch")
             fields(fixture["checks"], {c.id for c in catalog.checks})
+            execution = self.execution_reference(fixture, value)
+            if execution is not None:
+                references[execution.id] = execution
+            checkpoint()
         except RemoteError as error:
             if error.status in {0, 429} or error.status >= 500:
                 raise
@@ -290,6 +295,8 @@ class CertificationEngine:
         saved = self.journal.compute(
             identity(value) + ":report", value.wire(), lambda: document, heartbeat
         )
+        if saved["verdict"] == "PASSED" and report.verdict != "PASSED":
+            raise ValueError("current evidence no longer supports cached certification")
         # A cached certificate never skips freshness/current-generation checks.
         if (
             datetime.fromisoformat(saved["expires_at"]) <= self.clock()
@@ -357,6 +364,12 @@ class CertificationEngine:
         ):
             raise ValueError("certificate evidence producer mismatch")
         supplied = {r.id: r for r in [value.fixture, *dict(value.observations).values()]}
+        fixture_doc = decode(self.evidence.read(value.fixture))
+        if not isinstance(fixture_doc, dict):
+            raise ValueError("invalid fixture evidence")
+        execution = self.execution_reference(fixture_doc, value)
+        if execution is not None:
+            supplied[execution.id] = execution
         verified = {}
         for item in document["evidence"]:
             evidence = evidence_from_wire(item)
@@ -368,7 +381,11 @@ class CertificationEngine:
                 raise ValueError("certificate input evidence mismatch")
             self.evidence.verify(evidence)
             verified[evidence.id] = evidence
-        if not verified or ref.expires_at != min(e.expires_at for e in verified.values()):
+        if (
+            (execution is not None and execution.id not in verified)
+            or not verified
+            or ref.expires_at != min(e.expires_at for e in verified.values())
+        ):
             raise ValueError("certificate validity interval mismatch")
         results = document["results"]
         if len(results) != 120 or {r["check_id"] for r in results} != {r.id for r in policy.rules}:
@@ -390,6 +407,48 @@ class CertificationEngine:
         if not ref.valid_for(policy.scope, self.clock()):
             raise ValueError("certificate expired during verification")
         return GateResult("certification", value.release, True, ref)
+
+    def execution_reference(
+        self, fixture: dict[str, Any], value: VerificationInput
+    ) -> Evidence | None:
+        """Revalidate optional independent runner proof, including when consuming a saved gate."""
+        if "execution" not in fixture:
+            return None
+        proof = fields(fixture["execution"], {"policy_sha256", "evidence"})
+        if not re.fullmatch(r"[0-9a-f]{64}", text(proof["policy_sha256"], 64)):
+            raise ValueError("invalid fixture policy identity")
+        ref = evidence_from_wire(proof["evidence"])
+        if (
+            ref.producer in {self.policy.collector, self.policy.assessor, self.policy.verifier}
+            or not ref.valid_for(value.release.scope, self.clock())
+            or ref.observed_at != value.window_end
+        ):
+            raise ValueError("invalid independent runner evidence")
+        document = fields(
+            decode(self.evidence.read(ref)),
+            {"schema_version", "kind", "binding", "policy_sha256", "status", "scenarios"},
+        )
+        expected = {
+            "release": json.loads(canonical(asdict(value.release))),
+            "artifact_kind": value.artifact_kind,
+            "window_start": value.window_start.isoformat(),
+            "window_end": value.window_end.isoformat(),
+            "context_version": value.context_version,
+            "policy_sha256": self.policy.fingerprint,
+            "catalog_sha256": self.policy.catalog_sha256,
+        }
+        scenarios = document["scenarios"]
+        if (
+            document["schema_version"] != 2
+            or document["kind"] != "fixture-execution"
+            or document["status"] != "completed"
+            or document["binding"] != expected
+            or document["policy_sha256"] != proof["policy_sha256"]
+            or not isinstance(scenarios, list)
+            or not 1 <= len(scenarios) <= 40
+        ):
+            raise ValueError("runner proof does not bind the certification input")
+        return ref
 
     def observation(
         self, doc: dict[str, Any], source: Source, value: VerificationInput, ref: Evidence

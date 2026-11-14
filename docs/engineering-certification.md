@@ -53,7 +53,7 @@ python -m sre_suite.execution.cli export-certification-plan WORKFLOW_ID \
   --output /absolute/private/certification-plan.json
 ```
 
-The plan contains the exact `release`, artifact kind, window, context version, catalog/policy fingerprints and telemetry-plan digest. The artifact is the existing `source-candidate-v1` recipe; the release's plan digest is the frozen engineering manifest. It does not identify a deployed OCI image. An independent assessor uses these fields to produce the full fixture/applicability document described in the [certification guide](certification.md), with all 120 assessment IDs, and uploads it with the assessor's authenticated evidence credential. This increment does not invent expected values, generate fixture traffic or implement a fixture-runner agent.
+The plan contains the exact `release`, artifact kind, window, context version, catalog/policy fingerprints and telemetry-plan digest. The artifact is the existing `source-candidate-v1` recipe; the release's plan digest is the frozen engineering manifest. It does not identify a deployed OCI image. An independent assessor uses these fields to produce the full fixture/applicability document described in the [certification guide](certification.md), with all 120 assessment IDs, and uploads it with the assessor's authenticated evidence credential. The manual path does not generate fixture traffic. Version 0.18 adds the optional [independent fixture-runner/assessor workflow](fixture-agents.md).
 
 Save the API-returned Evidence metadata object (not just its ID and not the fixture document) in a `0600` file outside Git, then submit it:
 
@@ -73,3 +73,7 @@ The parent starts one `ServiceCertification` child, awaits its result and checks
 Plans, windows and inputs are immutable journal records. Lost activity/report acknowledgements reuse the same input identity and bytes; worker restart and workflow replay preserve the plan and accepted fixture. Parent cancellation requests child cancellation and waits for acknowledgement; hard child/process deadlines remain in force. Already published drafts and evidence are retained. Final report retries recheck current authority even when remote Jira writes have already succeeded.
 
 Run the parent with `status`/`result` as usual. Successful reports include a `certification` summary with the authenticated evidence reference and exact release. Failed certification summaries carry no passing gate; activity/child failures can return a blocked workflow result with `jira_reported=false`. Manual reconciliation may be needed after expiry or generation change. Live backend/schema acceptance, independent fixture automation, cross-host journal recovery, shipping and human production approvals are not established by synthetic tests.
+
+## Automatic independent assessment
+
+Version 0.18 accepts an optional `fixture` dispatch (`policy_sha256`, `runner_queue`, `task_queue`) in this private configuration. With it, the parent starts the [fixture/assessor child](fixture-agents.md) during the observation window and consumes its evidence directly. Manual fixture signals are ignored for readiness on that path. Without it, the bounded independent-reference handoff above is unchanged.

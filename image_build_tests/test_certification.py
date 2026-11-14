@@ -28,7 +28,7 @@ from sre_suite.delivery.helm import resources
 from sre_suite.execution.http import JsonHttp, RemoteError
 from sre_suite.execution.journal import Journal
 from sre_suite.execution.wire import canonical
-from sre_suite.fixtures.contracts import FixturePolicy
+from sre_suite.fixtures.contracts import FixturePolicy, FixtureRequest
 from sre_suite.fixtures.journeys import JourneyTarget
 from sre_suite.fixtures.runtime import FixtureRuntime
 from sre_suite.fixtures.target_service import verify
@@ -321,7 +321,7 @@ class ImageCertificationTests(test_pipeline.ImagePipelineTests):
                 d.scope, identity["service.version"], built["image_digest"], config
             )
             vpolicy = VerificationPolicy.parse(verification)
-            start_time = datetime.now(UTC)
+            start_time = datetime.now(UTC).replace(microsecond=0)
             end = start_time + timedelta(seconds=15)
             plan = dict(
                 release=release,
@@ -346,6 +346,11 @@ class ImageCertificationTests(test_pipeline.ImagePipelineTests):
                         ca_env="SRE_JOURNEY_CA_FILE",
                     ),
                     target_service=proof,
+                    journey_export=dict(
+                        base_url=config.url("tempo"),
+                        authorization_env="SRE_JOURNEY_TRACES_AUTH",
+                        ca_env="SRE_JOURNEY_TRACE_CA_FILE",
+                    ),
                 )
             )
             policy = FixturePolicy.parse(bundle["fixture_policy"])
@@ -356,10 +361,13 @@ class ImageCertificationTests(test_pipeline.ImagePipelineTests):
                 {
                     "SRE_JOURNEY_SERVICE_AUTH": "Bearer " + "s" * 40,
                     "SRE_JOURNEY_CA_FILE": str(cert),
+                    "SRE_JOURNEY_TRACES_AUTH": tokens["traces_write"],
+                    "SRE_JOURNEY_TRACE_CA_FILE": str(stack / "server.crt"),
                 },
                 d.client("runner"),
                 Journal(root / "journeys"),
                 policy.target_service,
+                policy.journey_export,
             )
             runner = FixtureRuntime(
                 policy, d.client("runner"), Journal(root / "runner"), target=target
@@ -369,10 +377,14 @@ class ImageCertificationTests(test_pipeline.ImagePipelineTests):
             # Replacement must preserve request keys, counters and pending exports.
             remove()
             start()
-            # Fresh worker journals force the same GET keys back through the replacement.
-            target.journal = Journal(root / "journeys-restarted")
-            runner.journal = Journal(root / "runner-restarted")
-            executed = runner.execute(raw_fixture)
+            # Explicit retries through the replacement verify server-side durable keys.
+            original_journal = target.journal
+            target.journal = Journal(root / "journeys-retry")
+            fixture_request = FixtureRequest.parse(raw_fixture)
+            for scenario in policy.scenarios:
+                target.call("POST", scenario.path, runner.command(fixture_request, scenario))
+            target.journal = original_journal
+            self.assertEqual(runner.execute(raw_fixture), executed)
             remaining = (end - datetime.now(UTC)).total_seconds()
             if remaining > 0:
                 time.sleep(remaining)

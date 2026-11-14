@@ -40,7 +40,8 @@ def prepare(value: object) -> dict[str, Any]:
             "assessor_queue",
             "origin",
             "target_service",
-        },
+        }
+        | ({"journey_export"} if isinstance(value, dict) and "journey_export" in value else set()),
     )
     plan = wire(raw["plan"])
     if plan.get("artifact_kind") != "container-image-v1":
@@ -83,6 +84,8 @@ def prepare(value: object) -> dict[str, Any]:
         "journeys": {"origins": {"service": origin}, "routes": routes},
         "target_service": copy.deepcopy(raw["target_service"]),
     }
+    if "journey_export" in raw:
+        policy_raw["journey_export"] = copy.deepcopy(raw["journey_export"])
     # All 120 oracle/applicability entries must be reviewed independently of target output.
     policy = FixturePolicy.parse(policy_raw)
     request = {"plan": plan, "dispatch": policy.dispatch}

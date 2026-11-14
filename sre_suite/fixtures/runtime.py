@@ -119,6 +119,16 @@ class FixtureRuntime:
             )
             results.append(self.response(request, scenario, result))
         self.guard(request, heartbeat)
+        if self.policy.journey_export:
+            from .journeys import JourneyTarget
+
+            if (
+                not isinstance(self.target, JourneyTarget)
+                or self.target.trace_export != self.policy.journey_export
+            ):
+                raise ValueError("reviewed journey trace exporter required")
+            self.target.complete(results, lambda: self.guard(request, heartbeat))
+            self.guard(request, heartbeat)
         document = {
             "schema_version": 2,
             "kind": "fixture-execution",

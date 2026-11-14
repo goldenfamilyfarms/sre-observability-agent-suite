@@ -70,6 +70,7 @@ class FixturePolicy:
     fingerprint: str
     journeys: dict[str, Any] | None = None
     target_service: dict[str, Any] | None = None
+    journey_export: dict[str, Any] | None = None
 
     @property
     def dispatch(self) -> dict[str, Any]:
@@ -93,7 +94,7 @@ class FixturePolicy:
                 "checks",
             }
             | (
-                {k for k in ("journeys", "target_service") if k in value}
+                {k for k in ("journeys", "target_service", "journey_export") if k in value}
                 if isinstance(value, dict)
                 else set()
             ),
@@ -202,6 +203,13 @@ class FixturePolicy:
             target_service = validate_target(
                 row["target_service"], runner, policy.assessor, policy.collector, policy.verifier
             )
+        journey_export = None
+        if "journey_export" in row:
+            from .journey_traces import validate as validate_export
+
+            if target_service is None:
+                raise ValueError("journey trace export requires independent target proof")
+            journey_export = validate_export(row["journey_export"])
         return cls(
             policy,
             runner,
@@ -215,6 +223,7 @@ class FixturePolicy:
             digest(row),
             journeys,
             target_service,
+            journey_export,
         )
 
 
